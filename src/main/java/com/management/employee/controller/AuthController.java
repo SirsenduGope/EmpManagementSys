@@ -2,10 +2,9 @@ package com.management.employee.controller;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import javax.persistence.EntityNotFoundException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,10 +16,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import com.management.employee.CustomUserDetails;
 import com.management.employee.entity.Employee;
@@ -135,9 +134,9 @@ public class AuthController {
 			empDetails.setLastName(signUpRequest.getLastName());
 			if(signUpRequest.getReportTo() != null) {
 				try {
-					Employee reportTo = employeeRepository.findByEmail(signUpRequest.getReportTo());
-					if(reportTo != null) {
-						user.setManager(reportTo);
+					Optional<Employee> reportTo = employeeRepository.findByEmail(signUpRequest.getReportTo());
+					if(reportTo.isPresent()) {
+						user.setManager(reportTo.get());
 					}
 					else {
 						logger.debug("No user found for email id : " + signUpRequest.getReportTo());

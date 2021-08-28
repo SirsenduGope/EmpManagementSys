@@ -17,7 +17,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
-import javax.persistence.MapsId;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -25,6 +24,7 @@ import javax.persistence.Table;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 
 @Entity
@@ -54,14 +54,17 @@ public class Employee extends Auditable<String> implements Serializable {
     @JoinColumn(name = "report_to", referencedColumnName = "email")
 	private Employee manager;
 	
+	@JsonIgnore
 	@JsonView(Views.Public.class)
 	@OneToMany(mappedBy = "manager")
 	private List<Employee> subordinates = new ArrayList<Employee>();
 	
+	@JsonView(Views.Public.class)
 	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "emp_details_id")
 	private EmployeeDetails employeeDetails;
 		
+	@JsonView(Views.Public.class)
 	@ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinTable(	name = "employee_roles", 
 				joinColumns = @JoinColumn(name = "employee_id"), 

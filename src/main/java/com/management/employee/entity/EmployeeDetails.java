@@ -2,17 +2,12 @@ package com.management.employee.entity;
 
 import java.io.Serializable;
 import java.sql.Date;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -95,6 +90,7 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 	@Column(name = "deleted", columnDefinition = "bit(1) default b'0'")
 	private boolean deleted = Boolean.FALSE;
 	
+	@JsonView(Views.Public.class)
 	@OneToOne(mappedBy = "employeeDetails")
 	private Employee employee;
 
@@ -104,7 +100,7 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 
 	public EmployeeDetails(Long id, String firstName, String middleName, String lastName, String phone, String mobile,
 			String address, String state, String city, String zip, Gender gender, Date dateOfJoining, Date dateOfBirth,
-			boolean isActive, boolean deleted, Employee employee) {
+			boolean isActive, boolean deleted) {
 		super();
 		this.firstName = firstName;
 		this.middleName = middleName;
@@ -120,7 +116,6 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 		this.dateOfBirth = dateOfBirth;
 		this.isActive = isActive;
 		this.deleted = deleted;
-		this.employee = employee;
 	}
 
 	public Long getId() {
@@ -237,14 +232,6 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 
 	public void setDeleted(boolean deleted) {
 		this.deleted = deleted;
-	}
-
-	public Employee getEmployee() {
-		return employee;
-	}
-
-	public void setEmployee(Employee employee) {
-		this.employee = employee;
 	}
 
 	@Override

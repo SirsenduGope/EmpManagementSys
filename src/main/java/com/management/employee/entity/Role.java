@@ -52,7 +52,6 @@ public class Role extends Auditable<String> implements Serializable {
 	public Role(Roles role, Set<Employee> employees) {
 		super();
 		this.role = role;
-		this.employees = employees;
 	}
 
 	public Integer getId() {
@@ -67,13 +66,5 @@ public class Role extends Auditable<String> implements Serializable {
 		this.role = role;
 	}
 
-	public Set<Employee> getEmployees() {
-		return employees;
-	}
-
-	public void setEmployees(Set<Employee> employees) {
-		this.employees = employees;
-	}
-
-	
+		
 }
