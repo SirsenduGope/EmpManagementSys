@@ -252,8 +252,7 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 		return "EmployeeDetails [id=" + id + ", firstName=" + firstName + ", middleName=" + middleName + ", lastName="
 				+ lastName + ", phone=" + phone + ", mobile=" + mobile + ", address=" + address + ", state=" + state
 				+ ", city=" + city + ", zip=" + zip + ", gender=" + gender + ", dateOfJoining=" + dateOfJoining
-				+ ", dateOfBirth=" + dateOfBirth + ", isActive=" + isActive + ", deleted=" + deleted + ", employee="
-				+ employee + "]";
+				+ ", dateOfBirth=" + dateOfBirth + ", isActive=" + isActive + ", deleted=" + deleted + "]";
 	}
 
 	
