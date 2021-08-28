@@ -9,6 +9,7 @@ public class SignupRequest {
     private String password;
     private String firstName;
     private String lastName;
+    private String reportTo;
   
     public String getEmail() {
         return email;
@@ -48,5 +49,13 @@ public class SignupRequest {
 
 	public void setLastName(String lastName) {
 		this.lastName = lastName;
+	}
+
+	public String getReportTo() {
+		return reportTo;
+	}
+
+	public void setReportTo(String reportTo) {
+		this.reportTo = reportTo;
 	}
 }

@@ -22,7 +22,9 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.management.employee.entity.Employee;
 import com.management.employee.entity.EmployeeDetails;
 import com.management.employee.entity.Views;
+import com.management.employee.payload.EmployeeResponse;
 import com.management.employee.payload.Message;
+import com.management.employee.repository.EmployeeDetailsRepository;
 import com.management.employee.repository.EmployeeRepository;
 
 
@@ -31,45 +33,16 @@ import com.management.employee.repository.EmployeeRepository;
 public class EmployeeController {
 	
 	private EmployeeRepository empRepo;
+	private EmployeeDetailsRepository empDetailsRepo;
 	
-	public EmployeeController(final EmployeeRepository empRepo) {
+	public EmployeeController(final EmployeeRepository empRepo,
+			final EmployeeDetailsRepository empDetailsRepo) {
 		this.empRepo = empRepo;
+		this.empDetailsRepo = empDetailsRepo;
 	}
 	
 	private static final Logger logger = LoggerFactory.getLogger(EmployeeController.class);
 
-//	@JsonView(Views.Public.class)
-//	@RequestMapping(value = "/register", method = RequestMethod.POST)
-//	public ResponseEntity<?> employeeRegister(@RequestBody Employee employee) {
-//		Employee newEmployee = new Employee();
-//		try {
-//			BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-//			if(employee != null) {
-//				if(employee.getEmail() != null && 
-//						employee.getPassword() != null) {
-//					
-//					Employee isExistingEmp = empRepo.findByEmail(employee.getEmail());
-//					if(isExistingEmp == null) {
-//						String encodedPassword = passwordEncoder.encode(employee.getPassword());
-//						employee.setPassword(encodedPassword);
-//						newEmployee = empRepo.save(employee);
-//					}
-//					else {
-//						Message msg = new Message("Duplicate entity found with email : " + employee.getEmail());
-//						return new ResponseEntity<Message>(msg, HttpStatus.CONFLICT);
-//					}
-//					
-//				}
-//			}
-//		}catch(IllegalArgumentException ex) {
-//			logger.debug("Illigal argument exception on saving new employee, "+ex.getMessage());
-//		}
-//		catch(Exception ex) {
-//			logger.debug("ERROR : Exception on new employee register : " + ex.getMessage());
-//			logger.debug("Exception : " + ex.getStackTrace());
-//		}
-//		return new ResponseEntity<Employee>(newEmployee, HttpStatus.CREATED);
-//	}
 	
 	@PreAuthorize("hasRole('USER') or hasRole('HR') or hasRole('ADMIN') or hasRole('MANAGER')")
 	@RequestMapping(value = "/saveemployeedetails", method = RequestMethod.POST)
@@ -99,12 +72,26 @@ public class EmployeeController {
 	@JsonView(Views.Public.class)
 	@RequestMapping(value = "/allemployee", method = RequestMethod.GET)
 	public ResponseEntity<?> getAllEmployee() {
+		
 		List<Employee> employees = new ArrayList<>();
+		List<EmployeeResponse> empResponses = new ArrayList<>();
 		employees = empRepo.findAll();
-		return new ResponseEntity<List<Employee>>(employees, HttpStatus.OK);
+		if(employees.size() > 0) {
+			for(Employee emp : employees) {
+				EmployeeResponse empResponse = new EmployeeResponse();
+				logger.info(""+emp.getId());
+				
+				EmployeeDetails empDetails = empDetailsRepo.getById(emp.getEmployeeDetails().getId());
+				empResponse.setEmp(emp);
+				empResponse.setEmpDetails(empDetails);
+				
+				empResponses.add(empResponse);
+			}
+		}
+		return new ResponseEntity<List<EmployeeResponse>>(empResponses, HttpStatus.OK);
 	}
 	
-	@PreAuthorize("hasRole('USER') or hasRole('HR') or hasRole('ADMIN') or hasRole('MANAGER')")
+//	@PreAuthorize("hasRole('USER') or hasRole('HR') or hasRole('ADMIN') or hasRole('MANAGER')")
 	@JsonView(Views.Public.class)
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
 	public ResponseEntity<?> getEmployeeById(@PathVariable("id") String id){

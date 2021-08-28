@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.persistence.EntityNotFoundException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -131,6 +133,20 @@ public class AuthController {
 			user.setRoles(roles);
 			empDetails.setFirstName(signUpRequest.getFirstName());
 			empDetails.setLastName(signUpRequest.getLastName());
+			if(signUpRequest.getReportTo() != null) {
+				try {
+					Employee reportTo = employeeRepository.findByEmail(signUpRequest.getReportTo());
+					if(reportTo != null) {
+						user.setManager(reportTo);
+					}
+					else {
+						logger.debug("No user found for email id : " + signUpRequest.getReportTo());
+					}
+				}catch(Exception ex) {
+					logger.debug("ERROR : On fetching employee for email : " + signUpRequest.getReportTo());
+					logger.debug("ERROR : Message : " + ex.getMessage());
+				}
+			}
 			user.setEmployeeDetails(empDetails);
 			employeeRepository.save(user);
 		}catch(IllegalArgumentException ex) {

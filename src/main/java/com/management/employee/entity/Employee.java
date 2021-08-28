@@ -17,6 +17,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.MapsId;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -57,10 +58,10 @@ public class Employee extends Auditable<String> implements Serializable {
 	@OneToMany(mappedBy = "manager")
 	private List<Employee> subordinates = new ArrayList<Employee>();
 	
-	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "employee")
-	@JoinColumn(name = "emp_details_id", referencedColumnName = "id")
+	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JoinColumn(name = "emp_details_id")
 	private EmployeeDetails employeeDetails;
-	
+		
 	@ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinTable(	name = "employee_roles", 
 				joinColumns = @JoinColumn(name = "employee_id"), 
@@ -158,6 +159,7 @@ public class Employee extends Auditable<String> implements Serializable {
 	public void setSubordinates(List<Employee> subordinates) {
 		this.subordinates = subordinates;
 	}
+
 
 	@Override
 	public String toString() {

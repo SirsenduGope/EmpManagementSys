@@ -40,6 +40,10 @@ public class Role extends Auditable<String> implements Serializable {
 	
 	@ManyToMany(mappedBy = "roles")
 	private Set<Employee> employees;
+	
+	@JsonView(Views.Internal.class)
+	@Column(name = "deleted", columnDefinition = "bit(1) default b'0'")
+	private boolean deleted = Boolean.FALSE;
 
 	public Role() {
 		super();

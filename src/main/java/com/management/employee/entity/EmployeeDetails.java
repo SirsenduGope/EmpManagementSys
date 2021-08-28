@@ -95,7 +95,7 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 	@Column(name = "deleted", columnDefinition = "bit(1) default b'0'")
 	private boolean deleted = Boolean.FALSE;
 	
-	@OneToOne
+	@OneToOne(mappedBy = "employeeDetails")
 	private Employee employee;
 
 	public EmployeeDetails() {
