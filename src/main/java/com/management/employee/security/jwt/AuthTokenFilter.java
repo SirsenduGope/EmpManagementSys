@@ -17,7 +17,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.management.employee.service.CustomUserDetailsService;
+import com.management.employee.serviceImpl.CustomUserDetailsService;
 
 
 public class AuthTokenFilter extends OncePerRequestFilter {
