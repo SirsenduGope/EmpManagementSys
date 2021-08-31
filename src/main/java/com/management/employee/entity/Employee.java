@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 @Entity
 @Table(name = "employees")
 @SQLDelete(sql = "UPDATE employees SET deleted = true WHERE id=?")
-@Where(clause = "deleted=false")
+@Where(clause = "deleted = false")
 public class Employee extends Auditable<String> implements Serializable {
 	
 	private static final long serialVersionUID = -7612435387734737773L;

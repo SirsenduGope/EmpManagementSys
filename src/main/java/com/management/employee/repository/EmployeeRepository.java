@@ -17,6 +17,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long>{
 	
 	Boolean existsByEmail(String email);
 	
-	@Query(value = "select * from employees e where e.report_to = ?1", nativeQuery = true)
+	@Query(value = "select * from employees e where e.report_to = ?1 and e.deleted = 0", nativeQuery = true)
 	Optional<List<Employee>> findByReportTo(String email);
 }

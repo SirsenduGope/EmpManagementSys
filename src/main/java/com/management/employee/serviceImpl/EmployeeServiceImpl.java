@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.persistence.EntityNotFoundException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -107,7 +109,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 			
 			newEmployee.setEmployeeDetails(newEmpDetails);
 			
-			if(authority.equals(Roles.ROLE_MANAGER.name())) {
+			if(authority.equals(Roles.ROLE_MANAGER.value)) {
 				Role userRole = roleRepository.findByRole(Roles.ROLE_USER)
 						.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
 				roles.add(userRole);
@@ -117,10 +119,10 @@ public class EmployeeServiceImpl implements IEmployeeService{
 				newEmployee.setRoles(roles);
 				newEmployee.setManager(reportTo.get());
 			}
-			else if(authority.equals(Roles.ROLE_HR.name())) {
+			else if(authority.equals(Roles.ROLE_HR.value)) {
 				if(signupRequest.getRole().size() > 0) {
 					String role = signupRequest.getRole().toArray()[0].toString();
-					Optional<Role> newUserrole = roleRepository.findByName(role);
+					Optional<Role> newUserrole = roleRepository.findByName(Roles.get(role).name());
 					if(newUserrole.isPresent()) {
 						roles.add(newUserrole.get());
 						newEmployee.setRoles(roles);
@@ -147,7 +149,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 			else {
 				if(signupRequest.getRole().size() > 0) {
 					String role = signupRequest.getRole().toArray()[0].toString();
-					Optional<Role> newUserrole = roleRepository.findByName(role);
+					Optional<Role> newUserrole = roleRepository.findByName(Roles.get(role).name());
 					if(newUserrole.isPresent()) {
 						roles.add(newUserrole.get());
 						newEmployee.setRoles(roles);
@@ -256,4 +258,132 @@ public class EmployeeServiceImpl implements IEmployeeService{
 		}
 		return new ResponseEntity<Employee>(newEmployee, HttpStatus.OK);
 	}
+	
+	
+	
+	@Override
+	public ResponseEntity<?> getEmployeeById(String id){
+		Optional<Employee> emp = Optional.empty();
+		String loggedInUSerEmail = Helper.loggedInUserEmailId();
+		String authority = Helper.loggedInUserAuthority();
+		
+		try {
+			if(id != null) {
+				emp = empRepo.findById(Long.parseLong(id));
+				if(emp.isPresent()) {
+					if(authority.equals(Roles.ROLE_USER.name())) {
+						if(!emp.get().getEmail().equals(loggedInUSerEmail)) {
+							return new ResponseEntity<Message>(new Message("You don't have permission to view this user's details"), HttpStatus.UNAUTHORIZED);
+						}
+					}
+					
+					else if(authority.equals(Roles.ROLE_MANAGER.name()) || authority.equals(Roles.ROLE_HR.name())) {
+						if(emp.get().getManager() != null) {
+							if(!emp.get().getManager().getEmail().equals(loggedInUSerEmail)) {
+								return new ResponseEntity<Message>(new Message("You don't have permission to view this user's details"), HttpStatus.UNAUTHORIZED);
+							}
+						}
+						else {
+							if(!emp.get().getEmail().equals(loggedInUSerEmail)) {
+								return new ResponseEntity<Message>(new Message("You don't have permission to view this user's details"), HttpStatus.UNAUTHORIZED);
+							}
+						}
+						
+						if(authority.equals(Roles.ROLE_HR.name()) && 
+								emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_USER.name())) {
+							String managerOfUser = emp.get().getManager().getEmail();
+							Optional<Employee> manager = empRepo.findByEmail(managerOfUser);
+							if(manager.isPresent()) {
+								if(manager.get().getManager() != null &&
+										!manager.get().getManager().getEmail().equals(loggedInUSerEmail)) {
+									return new ResponseEntity<Message>(new Message("You don't have permission to view this user's details"), HttpStatus.UNAUTHORIZED);
+								}
+							}
+						}
+					}
+				}
+				else {
+					return new ResponseEntity<Message>(new Message("User not found for id : " + id), HttpStatus.NOT_FOUND);
+				}
+				
+			}
+			else {
+				return new ResponseEntity<Message>(new Message("User Id should not be null"), HttpStatus.BAD_REQUEST);
+			}
+		}catch(EntityNotFoundException ex) {
+			logger.debug("ERROR : No Employye found for id : " + id);
+			logger.debug("Stack Trace : " + ex.getStackTrace());
+		}
+		catch(Exception ex) {
+			logger.debug("ERROR : Error message : " + ex.getMessage());
+			logger.debug("ERROR : Stack Trace : " + ex.getStackTrace());
+		}
+		
+		return new ResponseEntity<Employee>(emp.get(), HttpStatus.OK);
+	}
+	
+	
+	@Override
+	public ResponseEntity<?> deleteEmployeeById(String id){
+		Optional<Employee> emp = Optional.empty();
+		String loggedInUSerEmail = Helper.loggedInUserEmailId();
+		String authority = Helper.loggedInUserAuthority();
+		
+		try {
+			if(id != null) {
+				emp = empRepo.findById(Long.parseLong(id));
+				if(emp.isPresent()) {
+					if(authority.equals(Roles.ROLE_HR.name()) && 
+							emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_USER.name())) {
+						String managerOfUser = emp.get().getManager().getEmail();
+						Optional<Employee> manager = empRepo.findByEmail(managerOfUser);
+						if(manager.isPresent()) {
+							if(manager.get().getManager() != null &&
+									!manager.get().getManager().getEmail().equals(loggedInUSerEmail)) {
+								return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
+							}
+						}
+					}
+					else if(authority.equals(Roles.ROLE_HR.name()) && 
+							emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_MANAGER.name())) {
+						if(!emp.get().getManager().getEmail().equals(loggedInUSerEmail)) {
+							return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
+						}
+						else {
+							Optional<List<Employee>> users = empRepo.findByReportTo(emp.get().getEmail());
+							if(users.isPresent() && users.get().size() > 0) {
+								return new ResponseEntity<Message>(new Message("You can't delete this manager. There are many employees under this manager."), HttpStatus.UNAUTHORIZED);
+							}
+						}
+					}
+					else if(authority.equals(Roles.ROLE_HR.name()) && 
+							emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_HR.name())) {
+						return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
+					}
+					
+					if(emp.get().getEmail().equals(loggedInUSerEmail)) {
+						return new ResponseEntity<Message>(new Message("You can't delete yourself."), HttpStatus.UNAUTHORIZED);
+					}
+					
+					
+					empRepo.deleteById(Long.parseLong(id));
+				}
+				else {
+					return new ResponseEntity<Message>(new Message("No user found for id : "+ id), HttpStatus.NOT_FOUND);
+				}
+			}
+			
+		}catch(IllegalArgumentException ex) {
+			logger.debug("Illigal argument exception on deleting employee with id : " + id + ", " +ex.getMessage());
+		}
+		catch(Exception ex) {
+			logger.debug("ERROR : Exception on delete employee : " + ex.getMessage());
+			logger.debug("Exception : " + ex.getStackTrace());
+			
+		}
+		return new ResponseEntity<Message>(new Message("Employee deleted successfully with id : " + id), HttpStatus.OK);
+	}
+	
+	
+	
 }

@@ -15,4 +15,8 @@ public interface IEmployeeService {
 
 	public ResponseEntity<?> saveEmployeeDetails(EmployeeDetailsRequest employeeDetailsReq) throws NotFoundException;
 
+	public ResponseEntity<?> getEmployeeById(String id);
+
+	public ResponseEntity<?> deleteEmployeeById(String id);
+
 }
