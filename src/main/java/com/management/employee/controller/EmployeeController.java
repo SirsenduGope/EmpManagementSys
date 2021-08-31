@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import com.management.employee.entity.Views;
+import com.management.employee.payload.EmployeeDetailsRequest;
 import com.management.employee.payload.SignupRequest;
 import com.management.employee.service.IEmployeeService;
 
@@ -28,28 +29,13 @@ public class EmployeeController {
 	}
 	
 	
-//	@PreAuthorize("hasRole('USER') or hasRole('HR') or hasRole('ADMIN') or hasRole('MANAGER')")
-//	@RequestMapping(value = "/saveemployeedetails", method = RequestMethod.POST)
-//	public ResponseEntity<?> saveEmployeeDetails(@RequestBody EmployeeDetails employeeDetails){
-//		Employee newEmployee = new Employee();
-//		if(employeeDetails != null && employeeDetails.getFirstName() != null) {
-//			String loginUserId = currentEmployee.getEmail();
-//			if(loginUserId != null) {
-//				try {
-//					Employee emp = empRepo.findByEmail(loginUserId);
-//					emp.setEmployeeDetails(employeeDetails);
-//					newEmployee = empRepo.save(emp);
-//				}catch(Exception ex) {
-//					logger.debug("ERROR : No Employye found for email : " + loginUserId);
-//					logger.debug("Stack Trace : " + ex.getStackTrace());
-//				}
-//			}
-//			else {
-//				return new ResponseEntity<Message>(new Message("Unable to get the current login user"), HttpStatus.NOT_FOUND);
-//			}
-//		}
-//		return new ResponseEntity<Employee>(newEmployee, HttpStatus.CREATED);
-//	}
+	@PreAuthorize("hasRole('USER') or hasRole('HR') or hasRole('ADMIN') or hasRole('MANAGER')")
+	@JsonView(Views.Public.class)
+	@RequestMapping(value = "/saveemployeedetails", method = RequestMethod.POST)
+	public ResponseEntity<?> saveEmployeeDetails(@RequestBody EmployeeDetailsRequest employeeDetailsReq) throws NotFoundException{
+
+		return employeeService.saveEmployeeDetails(employeeDetailsReq);
+	}
 	
 	
 	@PreAuthorize("hasRole('HR') or hasRole('ADMIN') or hasRole('MANAGER')")
@@ -59,7 +45,6 @@ public class EmployeeController {
 		
 		return employeeService.createNewEmployee(signupRequest);
 	}
-	
 	
 	
 	@PreAuthorize("hasRole('USER') or hasRole('HR') or hasRole('ADMIN') or hasRole('MANAGER')")

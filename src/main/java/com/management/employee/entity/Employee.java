@@ -25,6 +25,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonView;
 
 @Entity
@@ -62,6 +63,7 @@ public class Employee extends Auditable<String> implements Serializable {
 	@JsonView(Views.Public.class)
 	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "emp_details_id")
+	@JsonIgnoreProperties(value = {"employees", "hibernateLazyInitializer"})
 	private EmployeeDetails employeeDetails;
 		
 	@JsonView(Views.Public.class)
@@ -155,21 +157,13 @@ public class Employee extends Auditable<String> implements Serializable {
 		this.manager = manager;
 	}
 
-	public List<Employee> getSubordinates() {
-		return subordinates;
-	}
 
-	public void setSubordinates(List<Employee> subordinates) {
-		this.subordinates = subordinates;
-	}
-
-
-	@Override
-	public String toString() {
-		return "Employee [id=" + id + ", email=" + email + ", password=" + password + ", manager=" + manager
-				+ ", subordinates=" + subordinates + ", employeeDetails=" + employeeDetails + ", roles=" + roles
-				+ ", deleted=" + deleted + "]";
-	}
+	/*
+	 * @Override public String toString() { return "Employee [id=" + id + ", email="
+	 * + email + ", password=" + password + ", manager=" + manager.getEmail() +
+	 * ", subordinates=" + subordinates + ", employeeDetails=" + employeeDetails +
+	 * ", roles=" + roles + ", deleted=" + deleted + "]"; }
+	 */
 
 	
 	

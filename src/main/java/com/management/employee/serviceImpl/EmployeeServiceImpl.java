@@ -17,6 +17,7 @@ import com.management.employee.entity.Employee;
 import com.management.employee.entity.EmployeeDetails;
 import com.management.employee.entity.Role;
 import com.management.employee.enums.Roles;
+import com.management.employee.payload.EmployeeDetailsRequest;
 import com.management.employee.payload.Message;
 import com.management.employee.payload.SignupRequest;
 import com.management.employee.repository.EmployeeRepository;
@@ -183,6 +184,76 @@ public class EmployeeServiceImpl implements IEmployeeService{
 		}
 		
 		
+		return new ResponseEntity<Employee>(newEmployee, HttpStatus.OK);
+	}
+	
+	
+	@Override
+	public ResponseEntity<?> saveEmployeeDetails(EmployeeDetailsRequest employeeDetailsReq) throws NotFoundException{
+		Employee newEmployee = new Employee();
+		String loggedInUSerEmail = Helper.loggedInUserEmailId();
+		String authority = Helper.loggedInUserAuthority();
+		
+		if(employeeDetailsReq != null && employeeDetailsReq.getId() != null 
+				&& employeeDetailsReq.getEmployeeDetails().getFirstName() != null) {
+			try {
+				Optional<Employee> emp = empRepo.findById(Long.parseLong(employeeDetailsReq.getId()));
+				if(emp.isPresent()) {
+					Employee employee = emp.get();
+					System.out.println("Employee :" + employee.toString());
+					
+					if(authority.equals(Roles.ROLE_USER.name())) {
+						if(!loggedInUSerEmail.equals(employee.getEmail())) {
+							logger.debug(loggedInUSerEmail = " this user is trying to save or update another user record.");
+							return new ResponseEntity<Message>(new Message(loggedInUSerEmail = " this user is trying to save or update another user record."), HttpStatus.UNAUTHORIZED);
+						}
+					}
+					if(authority.equals(Roles.ROLE_MANAGER.name())) {
+						if(employee.getRoles().iterator().next().getRole().name().equals(Roles.ROLE_USER.name())) {
+							if(!loggedInUSerEmail.equals(employee.getManager().getEmail())) {
+								logger.debug(loggedInUSerEmail = " this manager is trying to save or update another manager's employee record.");
+								return new ResponseEntity<Message>(new Message(loggedInUSerEmail = " this manager is trying to save or update another manager's employee record."), HttpStatus.UNAUTHORIZED);
+							}
+						}
+						else if(employee.getRoles().iterator().next().getRole().name().equals(Roles.ROLE_MANAGER.name())) {
+							if(!loggedInUSerEmail.equals(employee.getEmail())) {
+								logger.debug(loggedInUSerEmail = " this user is trying to save or update another user record.");
+								return new ResponseEntity<Message>(new Message(loggedInUSerEmail = " this user is trying to save or update another user record."), HttpStatus.UNAUTHORIZED);
+							}
+						}
+						
+					}
+					
+					try {
+						EmployeeDetails updatedEmpDetails = employee.getEmployeeDetails();
+						updatedEmpDetails.setFirstName(employeeDetailsReq.getEmployeeDetails().getFirstName());
+						updatedEmpDetails.setMiddleName(employeeDetailsReq.getEmployeeDetails().getMiddleName());
+						updatedEmpDetails.setLastName(employeeDetailsReq.getEmployeeDetails().getLastName());
+						updatedEmpDetails.setPhone(employeeDetailsReq.getEmployeeDetails().getPhone());
+						updatedEmpDetails.setMobile(employeeDetailsReq.getEmployeeDetails().getMobile());
+						updatedEmpDetails.setAddress(employeeDetailsReq.getEmployeeDetails().getAddress());
+						updatedEmpDetails.setState(employeeDetailsReq.getEmployeeDetails().getState());
+						updatedEmpDetails.setCity(employeeDetailsReq.getEmployeeDetails().getCity());
+						updatedEmpDetails.setGender(employeeDetailsReq.getEmployeeDetails().getGender());
+						updatedEmpDetails.setZip(employeeDetailsReq.getEmployeeDetails().getZip());
+						updatedEmpDetails.setDateOfBirth(employeeDetailsReq.getEmployeeDetails().getDateOfBirth());
+						updatedEmpDetails.setDateOfJoining(employeeDetailsReq.getEmployeeDetails().getDateOfJoining());
+						
+						employee.setEmployeeDetails(updatedEmpDetails);
+						newEmployee = empRepo.save(employee);
+					}catch(Exception ex) {
+						logger.debug("ERROR : Unalbe to save employee object");
+						logger.debug("Error : Error message is : " + ex.getMessage());
+					}
+					
+					
+				}
+			}catch(Exception ex) {
+				logger.debug("ERROR : No Employye found for id : " + employeeDetailsReq.getId());
+				logger.debug("Stack Trace : " + ex.getStackTrace());
+				throw new NotFoundException("Employee not found for id :" + employeeDetailsReq.getId());
+			}
+		}
 		return new ResponseEntity<Employee>(newEmployee, HttpStatus.OK);
 	}
 }
