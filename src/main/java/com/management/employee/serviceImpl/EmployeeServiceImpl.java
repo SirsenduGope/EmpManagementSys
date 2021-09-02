@@ -333,32 +333,44 @@ public class EmployeeServiceImpl implements IEmployeeService{
 			if(id != null) {
 				emp = empRepo.findById(Long.parseLong(id));
 				if(emp.isPresent()) {
-					if(authority.equals(Roles.ROLE_HR.name()) && 
-							emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_USER.name())) {
-						String managerOfUser = emp.get().getManager().getEmail();
-						Optional<Employee> manager = empRepo.findByEmail(managerOfUser);
-						if(manager.isPresent()) {
-							if(manager.get().getManager() != null &&
-									!manager.get().getManager().getEmail().equals(loggedInUSerEmail)) {
+					if(authority.equals(Roles.ROLE_HR.name())) {
+						
+						if(emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_USER.name())) {
+							String managerOfUser = emp.get().getManager().getEmail();
+							Optional<Employee> manager = empRepo.findByEmail(managerOfUser);
+							if(manager.isPresent()) {
+								if(manager.get().getManager() != null &&
+										!manager.get().getManager().getEmail().equals(loggedInUSerEmail)) {
+									return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
+								}
+							}
+						}
+						else if(emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_MANAGER.name())) {
+							if(!emp.get().getManager().getEmail().equals(loggedInUSerEmail)) {
 								return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
 							}
-						}
-					}
-					else if(authority.equals(Roles.ROLE_HR.name()) && 
-							emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_MANAGER.name())) {
-						if(!emp.get().getManager().getEmail().equals(loggedInUSerEmail)) {
-							return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
-						}
-						else {
-							Optional<List<Employee>> users = empRepo.findByReportTo(emp.get().getEmail());
-							if(users.isPresent() && users.get().size() > 0) {
-								return new ResponseEntity<Message>(new Message("You can't delete this manager. There are many employees under this manager."), HttpStatus.UNAUTHORIZED);
+							else {
+								Optional<List<Employee>> users = empRepo.findByReportTo(emp.get().getEmail());
+								if(users.isPresent() && users.get().size() > 0) {
+									return new ResponseEntity<Message>(new Message("You can't delete this employee. There are many employees under this employee."), HttpStatus.UNAUTHORIZED);
+								}
 							}
 						}
+						else if(emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_HR.name())) {
+							return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
+						}
+						
 					}
-					else if(authority.equals(Roles.ROLE_HR.name()) && 
-							emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_HR.name())) {
-						return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
+					
+					if(authority.equals(Roles.ROLE_ADMIN.name())) {
+						
+						if(emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_MANAGER.name()) ||
+								emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_HR.name())) {
+							Optional<List<Employee>> users = empRepo.findByReportTo(emp.get().getEmail());
+							if(users.isPresent() && users.get().size() > 0) {
+								return new ResponseEntity<Message>(new Message("You can't delete this employee. There are many employees under this employee."), HttpStatus.UNAUTHORIZED);
+							}
+						}
 					}
 					
 					if(emp.get().getEmail().equals(loggedInUSerEmail)) {
