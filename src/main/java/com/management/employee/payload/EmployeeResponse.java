@@ -3,21 +3,14 @@ package com.management.employee.payload;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.fasterxml.jackson.annotation.JsonView;
 import com.management.employee.entity.Employee;
 import com.management.employee.entity.EmployeeDetails;
 import com.management.employee.entity.Role;
-import com.management.employee.entity.Views;
 
 public class EmployeeResponse {
 
-	@JsonView(Views.Public.class)
 	private Employee emp;
-	
-	@JsonView(Views.Public.class)
 	private EmployeeDetails empDetails;
-	
-	@JsonView(Views.Public.class)
 	private Set<Role> roles = new HashSet<>();
 	
 	public EmployeeResponse() {

@@ -14,7 +14,7 @@ import javax.persistence.Table;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
-import com.fasterxml.jackson.annotation.JsonView;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.management.employee.enums.Gender;
 
 @Entity
@@ -29,68 +29,53 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 	private static final long serialVersionUID = 7975042137908448876L;
 
 	@Id
-	@JsonView(Views.Public.class)
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id", unique = true, nullable = false)
 	private Long id;
 	
-	@JsonView(Views.Public.class)
 	@Column(name = "first_name", nullable = false, length = 50)
 	private String firstName;
 	
-	@JsonView(Views.Public.class)
 	@Column(name = "middle_name", length = 50)
 	private String middleName;
 	
-	@JsonView(Views.Public.class)
 	@Column(name = "last_name", length = 50)
 	private String lastName;
 	
-	@JsonView(Views.Public.class)
 	@Column(name = "phone", length = 15)
 	private String phone;
 	
-	@JsonView(Views.Public.class)
 	@Column(name = "mobile", length = 15)
 	private String mobile;
 	
-	@JsonView(Views.Public.class)
 	@Column(name = "address", length = 150)
 	private String address;
 	
-	@JsonView(Views.Public.class)
 	@Column(name = "state", length = 100)
 	private String state;
 	
-	@JsonView(Views.Public.class)
 	@Column(name = "city", length = 100)
 	private String city;
 	
-	@JsonView(Views.Public.class)
 	@Column(name = "zip", length = 10)
 	private String zip;
 	
-	@JsonView(Views.Public.class)
 	@Column(name = "gender", length = 10)
 	private Gender gender;
 	
-	@JsonView(Views.Public.class)
 	@Column(name = "date_of_joining")
 	private Date dateOfJoining;
 	
-	@JsonView(Views.Public.class)
 	@Column(name = "date_of_birth")
 	private Date dateOfBirth;
 	
-	@JsonView(Views.Public.class)
 	@Column(name = "is_active", columnDefinition = "bit(1) default b'1'")
 	private boolean isActive = Boolean.TRUE;
 
-	@JsonView(Views.Internal.class)
+	@JsonIgnore
 	@Column(name = "deleted", columnDefinition = "bit(1) default b'0'")
 	private boolean deleted = Boolean.FALSE;
 	
-	@JsonView(Views.Public.class)
 	@OneToOne(mappedBy = "employeeDetails")
 	private Employee employee;
 

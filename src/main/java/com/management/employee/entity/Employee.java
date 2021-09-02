@@ -26,7 +26,6 @@ import org.hibernate.annotations.Where;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonView;
 
 @Entity
 @Table(name = "employees")
@@ -37,43 +36,38 @@ public class Employee extends Auditable<String> implements Serializable {
 	private static final long serialVersionUID = -7612435387734737773L;
 	
 	@Id
-	@JsonView(Views.Public.class)
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id", unique = true, nullable = false)
 	private Long id;
 	
-	@JsonView(Views.Public.class)
 	@Column(name = "email", unique = true, nullable = false, length = 100)
 	private String email;
 	
-	@JsonView(Views.Internal.class)
+	@JsonIgnore
 	@Column(name = "password", nullable = false, length = 150)
 	private String password;
 	
-	@JsonView(Views.Public.class)
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "report_to", referencedColumnName = "email")
 	private Employee manager;
 	
 	@JsonIgnore
-	@JsonView(Views.Public.class)
 	@OneToMany(mappedBy = "manager")
+	@JsonIgnoreProperties(value = {"manager", "hibernateLazyInitializer"})
 	private List<Employee> subordinates = new ArrayList<Employee>();
 	
-	@JsonView(Views.Public.class)
 	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "emp_details_id")
 	@JsonIgnoreProperties(value = {"employees", "hibernateLazyInitializer"})
 	private EmployeeDetails employeeDetails;
 		
-	@JsonView(Views.Public.class)
 	@ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinTable(	name = "employee_roles", 
 				joinColumns = @JoinColumn(name = "employee_id"), 
 				inverseJoinColumns = @JoinColumn(name = "role_id"))
 	private Set<Role> roles = new HashSet<>();
 	
-	@JsonView(Views.Internal.class)
+	@JsonIgnore
 	@Column(name = "deleted", columnDefinition = "bit(1) default b'0'")
 	private boolean deleted = Boolean.FALSE;
 

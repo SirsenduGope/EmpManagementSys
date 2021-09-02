@@ -13,23 +13,29 @@ import org.springframework.data.annotation.LastModifiedDate;
 
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
 public class Auditable<U> {
 	
 	@CreatedBy
+	@JsonIgnore
     @Column(name = "created_by")
     private U createdBy;
 
     @CreatedDate
+    @JsonIgnore
     @Column(name = "created_date")
     private Date createdDate;
 
     @LastModifiedBy
+    @JsonIgnore
     @Column(name = "last_modified_by")
     private U lastModifiedBy;
 
     @LastModifiedDate
+    @JsonIgnore
     @Column(name = "last_modified_date")
     private Date lastModifiedDate;
 

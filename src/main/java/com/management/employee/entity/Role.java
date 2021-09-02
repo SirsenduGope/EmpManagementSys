@@ -16,7 +16,7 @@ import javax.persistence.Table;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
-import com.fasterxml.jackson.annotation.JsonView;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.management.employee.enums.Roles;
 
 @Entity
@@ -29,11 +29,9 @@ public class Role extends Auditable<String> implements Serializable {
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@JsonView(Views.Public.class)
 	@Column(name = "id", unique = true, nullable = false)
 	private Integer id;
 	
-	@JsonView(Views.Public.class)
 	@Enumerated(EnumType.STRING)
 	@Column(name = "Role", length = 50)
 	private Roles role;
@@ -41,7 +39,7 @@ public class Role extends Auditable<String> implements Serializable {
 	@ManyToMany(mappedBy = "roles")
 	private Set<Employee> employees;
 	
-	@JsonView(Views.Internal.class)
+	@JsonIgnore
 	@Column(name = "deleted", columnDefinition = "bit(1) default b'0'")
 	private boolean deleted = Boolean.FALSE;
 
