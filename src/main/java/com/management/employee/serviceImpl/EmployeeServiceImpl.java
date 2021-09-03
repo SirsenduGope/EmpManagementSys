@@ -83,7 +83,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 
 	
 	@Override
-	public ResponseEntity<?> createNewEmployee(@RequestBody SignupRequest signupRequest) throws NotFoundException {
+	public ResponseEntity<?> createNewEmployee(@RequestBody SignupRequest signupRequest) throws Exception {
 		
 		String loggedInUserEmailId = Helper.loggedInUserEmailId();
 		String authority = Helper.loggedInUserAuthority();
@@ -168,9 +168,11 @@ public class EmployeeServiceImpl implements IEmployeeService{
 			}catch(IllegalArgumentException ex) {
 				logger.debug("ERROR : On create a new employee with object : " + newEmployee.toString());
 				logger.debug("ERROR : Error message is : " + ex.getMessage());
+				throw new IllegalArgumentException("ERROR : On create a new employee with object : " + newEmployee.toString());
 			}catch(Exception ex) {
 				logger.debug("ERROR : On create a new employee with object : " + newEmployee.toString());
 				logger.debug("ERROR : Error message is : " + ex.getMessage());
+				throw new Exception("ERROR : On create a new employee with object : " + newEmployee.toString());
 			}
 		}
 		else {
@@ -246,6 +248,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 					}catch(Exception ex) {
 						logger.debug("ERROR : Unalbe to save employee object");
 						logger.debug("Error : Error message is : " + ex.getMessage());
+						throw new Exception("ERROR : Unalbe to save employee object");
 					}
 					
 					
@@ -262,7 +265,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	
 	
 	@Override
-	public ResponseEntity<?> getEmployeeById(String id){
+	public ResponseEntity<?> getEmployeeById(String id) throws Exception{
 		Optional<Employee> emp = Optional.empty();
 		String loggedInUSerEmail = Helper.loggedInUserEmailId();
 		String authority = Helper.loggedInUserAuthority();
@@ -313,10 +316,12 @@ public class EmployeeServiceImpl implements IEmployeeService{
 		}catch(EntityNotFoundException ex) {
 			logger.debug("ERROR : No Employye found for id : " + id);
 			logger.debug("Stack Trace : " + ex.getStackTrace());
+			throw new EntityNotFoundException("ERROR : No Employye found for id : " + id);
 		}
 		catch(Exception ex) {
 			logger.debug("ERROR : Error message : " + ex.getMessage());
 			logger.debug("ERROR : Stack Trace : " + ex.getStackTrace());
+			throw new Exception(ex);
 		}
 		
 		return new ResponseEntity<Employee>(emp.get(), HttpStatus.OK);
@@ -324,7 +329,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	
 	
 	@Override
-	public ResponseEntity<?> deleteEmployeeById(String id){
+	public ResponseEntity<?> deleteEmployeeById(String id) throws Exception{
 		Optional<Employee> emp = Optional.empty();
 		String loggedInUSerEmail = Helper.loggedInUserEmailId();
 		String authority = Helper.loggedInUserAuthority();
@@ -375,10 +380,12 @@ public class EmployeeServiceImpl implements IEmployeeService{
 			
 		}catch(IllegalArgumentException ex) {
 			logger.debug("Illigal argument exception on deleting employee with id : " + id + ", " +ex.getMessage());
+			throw new IllegalArgumentException("Illigal argument exception on deleting employee with id : " + id + ", " +ex.getMessage());
 		}
 		catch(Exception ex) {
 			logger.debug("ERROR : Exception on delete employee : " + ex.getMessage());
 			logger.debug("Exception : " + ex.getStackTrace());
+			throw new Exception(ex);
 			
 		}
 		return new ResponseEntity<Message>(new Message("Employee deleted successfully with id : " + id), HttpStatus.OK);

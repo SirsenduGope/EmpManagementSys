@@ -11,12 +11,12 @@ public interface IEmployeeService {
 
 	public ResponseEntity<?> getAllEmployee();
 
-	public ResponseEntity<?> createNewEmployee(SignupRequest signupRequest) throws NotFoundException;
+	public ResponseEntity<?> createNewEmployee(SignupRequest signupRequest) throws NotFoundException, Exception;
 
 	public ResponseEntity<?> saveEmployeeDetails(EmployeeDetailsRequest employeeDetailsReq) throws NotFoundException;
 
-	public ResponseEntity<?> getEmployeeById(String id);
+	public ResponseEntity<?> getEmployeeById(String id) throws Exception;
 
-	public ResponseEntity<?> deleteEmployeeById(String id);
+	public ResponseEntity<?> deleteEmployeeById(String id) throws Exception;
 
 }

@@ -36,7 +36,7 @@ public class EmployeeController {
 	
 	@PreAuthorize("hasRole('HR') or hasRole('ADMIN') or hasRole('MANAGER')")
 	@RequestMapping(value = "/save", method = RequestMethod.POST)
-	public ResponseEntity<?> createNewEmployee(@RequestBody SignupRequest signupRequest) throws NotFoundException {
+	public ResponseEntity<?> createNewEmployee(@RequestBody SignupRequest signupRequest) throws Exception {
 		
 		return employeeService.createNewEmployee(signupRequest);
 	}
@@ -49,9 +49,10 @@ public class EmployeeController {
 		return employeeService.getAllEmployee();
 	}
 	
+	
 	@PreAuthorize("hasRole('USER') or hasRole('HR') or hasRole('ADMIN') or hasRole('MANAGER')")
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
-	public ResponseEntity<?> getEmployeeById(@PathVariable("id") String id){
+	public ResponseEntity<?> getEmployeeById(@PathVariable("id") String id) throws Exception{
 
 		return employeeService.getEmployeeById(id);
 	}
@@ -59,7 +60,7 @@ public class EmployeeController {
 	
 	@PreAuthorize("hasRole('HR') or hasRole('ADMIN')")
 	@RequestMapping(value = "/delete/{id}", method = RequestMethod.DELETE)
-	public ResponseEntity<?> deleteEmployeeById(@PathVariable("id") String id){
+	public ResponseEntity<?> deleteEmployeeById(@PathVariable("id") String id) throws Exception{
 
 		return employeeService.deleteEmployeeById(id);
 	}
