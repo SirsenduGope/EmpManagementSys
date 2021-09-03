@@ -64,8 +64,8 @@ public class EmployeeServiceImpl implements IEmployeeService{
 		}
 		else if(authority.equals(Roles.ROLE_USER.name())) {
 			Optional<Employee> reportPerson = empRepo.findByEmail(loggedInUserEmailId);
-			if(reportPerson.isPresent() && reportPerson.get().getManager() != null && reportPerson.get().getManager().getEmail() != null) {
-				employees = empRepo.findByReportTo(reportPerson.get().getManager().getEmail());
+			if(reportPerson.isPresent() && reportPerson.get().getManagerEmail() != null) {
+				employees = empRepo.findByReportTo(reportPerson.get().getManagerEmail());
 				if(employees.isPresent()) {
 					return new ResponseEntity<List<Employee>>(employees.get(), HttpStatus.OK);
 				}
@@ -117,7 +117,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 				Optional<Employee> reportTo = empRepo.findByEmail(loggedInUserEmailId);
 				
 				newEmployee.setRoles(roles);
-				newEmployee.setManager(reportTo.get());
+				newEmployee.setManagerEmail(reportTo.get().getEmail());
 			}
 			else if(authority.equals(Roles.ROLE_HR.value)) {
 				if(signupRequest.getRole().size() > 0) {
@@ -129,14 +129,14 @@ public class EmployeeServiceImpl implements IEmployeeService{
 					}
 					if(role.equals(Roles.ROLE_MANAGER.name())) {
 						Optional<Employee> reportTo = empRepo.findByEmail(loggedInUserEmailId);
-						newEmployee.setManager(reportTo.get());
+						newEmployee.setManagerEmail(reportTo.get().getEmail());
 					}
 					if(role.equals(Roles.ROLE_USER.name())) {
 						String managerId = signupRequest.getReportTo();
 						if(managerId != null) {
 							Optional<Employee> manager = empRepo.findByEmail(managerId);
 							if(manager.isPresent()) {
-								newEmployee.setManager(manager.get());
+								newEmployee.setManagerEmail(manager.get().getEmail());
 							}
 						}
 					}
@@ -157,7 +157,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 					if(signupRequest.getReportTo() != null) {
 						Optional<Employee> manager = empRepo.findByEmail(signupRequest.getReportTo());
 						if(manager.isPresent()) {
-							newEmployee.setManager(manager.get());
+							newEmployee.setManagerEmail(manager.get().getEmail());
 						}
 					}
 				}
@@ -214,7 +214,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 					}
 					if(authority.equals(Roles.ROLE_MANAGER.name())) {
 						if(employee.getRoles().iterator().next().getRole().name().equals(Roles.ROLE_USER.name())) {
-							if(!loggedInUSerEmail.equals(employee.getManager().getEmail())) {
+							if(!loggedInUSerEmail.equals(employee.getManagerEmail())) {
 								logger.debug(loggedInUSerEmail = " this manager is trying to save or update another manager's employee record.");
 								return new ResponseEntity<Message>(new Message(loggedInUSerEmail = " this manager is trying to save or update another manager's employee record."), HttpStatus.UNAUTHORIZED);
 							}
@@ -281,8 +281,8 @@ public class EmployeeServiceImpl implements IEmployeeService{
 					}
 					
 					else if(authority.equals(Roles.ROLE_MANAGER.name()) || authority.equals(Roles.ROLE_HR.name())) {
-						if(emp.get().getManager() != null) {
-							if(!emp.get().getManager().getEmail().equals(loggedInUSerEmail)) {
+						if(emp.get().getManagerEmail() != null) {
+							if(!emp.get().getManagerEmail().equals(loggedInUSerEmail)) {
 								return new ResponseEntity<Message>(new Message("You don't have permission to view this user's details"), HttpStatus.UNAUTHORIZED);
 							}
 						}
@@ -294,11 +294,11 @@ public class EmployeeServiceImpl implements IEmployeeService{
 						
 						if(authority.equals(Roles.ROLE_HR.name()) && 
 								emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_USER.name())) {
-							String managerOfUser = emp.get().getManager().getEmail();
+							String managerOfUser = emp.get().getManagerEmail();
 							Optional<Employee> manager = empRepo.findByEmail(managerOfUser);
 							if(manager.isPresent()) {
-								if(manager.get().getManager() != null &&
-										!manager.get().getManager().getEmail().equals(loggedInUSerEmail)) {
+								if(manager.get().getManagerEmail() != null &&
+										!manager.get().getManagerEmail().equals(loggedInUSerEmail)) {
 									return new ResponseEntity<Message>(new Message("You don't have permission to view this user's details"), HttpStatus.UNAUTHORIZED);
 								}
 							}
@@ -338,32 +338,44 @@ public class EmployeeServiceImpl implements IEmployeeService{
 			if(id != null) {
 				emp = empRepo.findById(Long.parseLong(id));
 				if(emp.isPresent()) {
-					if(authority.equals(Roles.ROLE_HR.name()) && 
-							emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_USER.name())) {
-						String managerOfUser = emp.get().getManager().getEmail();
-						Optional<Employee> manager = empRepo.findByEmail(managerOfUser);
-						if(manager.isPresent()) {
-							if(manager.get().getManager() != null &&
-									!manager.get().getManager().getEmail().equals(loggedInUSerEmail)) {
+					if(authority.equals(Roles.ROLE_HR.name())) {
+						
+						if(emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_USER.name())) {
+							String managerOfUser = emp.get().getManagerEmail();
+							Optional<Employee> manager = empRepo.findByEmail(managerOfUser);
+							if(manager.isPresent()) {
+								if(manager.get().getManagerEmail() != null &&
+										!manager.get().getManagerEmail().equals(loggedInUSerEmail)) {
+									return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
+								}
+							}
+						}
+						else if(emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_MANAGER.name())) {
+							if(!emp.get().getManagerEmail().equals(loggedInUSerEmail)) {
 								return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
 							}
-						}
-					}
-					else if(authority.equals(Roles.ROLE_HR.name()) && 
-							emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_MANAGER.name())) {
-						if(!emp.get().getManager().getEmail().equals(loggedInUSerEmail)) {
-							return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
-						}
-						else {
-							Optional<List<Employee>> users = empRepo.findByReportTo(emp.get().getEmail());
-							if(users.isPresent() && users.get().size() > 0) {
-								return new ResponseEntity<Message>(new Message("You can't delete this manager. There are many employees under this manager."), HttpStatus.UNAUTHORIZED);
+							else {
+								Optional<List<Employee>> users = empRepo.findByReportTo(emp.get().getEmail());
+								if(users.isPresent() && users.get().size() > 0) {
+									return new ResponseEntity<Message>(new Message("You can't delete this employee. There are many employees under this employee."), HttpStatus.UNAUTHORIZED);
+								}
 							}
 						}
+						else if(emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_HR.name())) {
+							return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
+						}
+						
 					}
-					else if(authority.equals(Roles.ROLE_HR.name()) && 
-							emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_HR.name())) {
-						return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
+					
+					if(authority.equals(Roles.ROLE_ADMIN.name())) {
+						
+						if(emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_MANAGER.name()) ||
+								emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_HR.name())) {
+							Optional<List<Employee>> users = empRepo.findByReportTo(emp.get().getEmail());
+							if(users.isPresent() && users.get().size() > 0) {
+								return new ResponseEntity<Message>(new Message("You can't delete this employee. There are many employees under this employee."), HttpStatus.UNAUTHORIZED);
+							}
+						}
 					}
 					
 					if(emp.get().getEmail().equals(loggedInUSerEmail)) {
