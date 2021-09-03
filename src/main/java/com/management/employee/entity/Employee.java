@@ -1,9 +1,7 @@
 package com.management.employee.entity;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -16,8 +14,6 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -47,14 +43,8 @@ public class Employee extends Auditable<String> implements Serializable {
 	@Column(name = "password", nullable = false, length = 150)
 	private String password;
 	
-	@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "report_to", referencedColumnName = "email")
-	private Employee manager;
-	
-	@JsonIgnore
-	@OneToMany(mappedBy = "manager")
-	@JsonIgnoreProperties(value = {"manager", "hibernateLazyInitializer"})
-	private List<Employee> subordinates = new ArrayList<Employee>();
+	@Column(name = "report_to", nullable = false, length = 150)
+	private String managerEmail;
 	
 	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "emp_details_id")
@@ -89,11 +79,12 @@ public class Employee extends Auditable<String> implements Serializable {
 		this.roles = roles;
 	}
 
-	public Employee(String email, String password, Employee manager, EmployeeDetails employeeDetails, Set<Role> roles) {
+	
+	public Employee(String email, String password, String managerEmail, EmployeeDetails employeeDetails, Set<Role> roles) {
 		super();
 		this.email = email;
 		this.password = password;
-		this.manager = manager;
+		this.managerEmail = managerEmail;
 		this.employeeDetails = employeeDetails;
 		this.roles = roles;
 	}
@@ -143,12 +134,12 @@ public class Employee extends Auditable<String> implements Serializable {
 	}
 	
 	
-	public Employee getManager() {
-		return manager;
+	public String getManagerEmail() {
+		return managerEmail;
 	}
 
-	public void setManager(Employee manager) {
-		this.manager = manager;
+	public void setManagerEmail(String manager) {
+		this.managerEmail = manager;
 	}
 
 

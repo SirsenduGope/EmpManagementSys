@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -100,6 +101,8 @@ public class AuthServiceImpl implements IAuthService {
 					Role adminRole = roleRepository.findByRole(Roles.ROLE_ADMIN)
 							.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
 					roles.add(adminRole);
+					
+					signUpRequest.setReportTo(signUpRequest.getEmail());
 
 					break;
 				case "hr":
@@ -126,20 +129,30 @@ public class AuthServiceImpl implements IAuthService {
 			user.setRoles(roles);
 			empDetails.setFirstName(signUpRequest.getFirstName());
 			empDetails.setLastName(signUpRequest.getLastName());
-			if(signUpRequest.getReportTo() != null) {
-				try {
-					Optional<Employee> reportTo = employeeRepository.findByEmail(signUpRequest.getReportTo());
-					if(reportTo.isPresent()) {
-						user.setManager(reportTo.get());
+			
+			if(!roles.iterator().next().getRole().name().equals(Roles.ROLE_ADMIN.name())) {
+				if(signUpRequest.getReportTo() != null) {
+					try {
+						Optional<Employee> reportTo = employeeRepository.findByEmail(signUpRequest.getReportTo());
+						if(reportTo.isPresent()) {
+							user.setManagerEmail(reportTo.get().getEmail());
+						}
+						else {
+							logger.debug("No user found for email id : " + signUpRequest.getReportTo());
+						}
+					}catch(Exception ex) {
+						logger.debug("ERROR : On fetching employee for email : " + signUpRequest.getReportTo());
+						logger.debug("ERROR : Message : " + ex.getMessage());
 					}
-					else {
-						logger.debug("No user found for email id : " + signUpRequest.getReportTo());
-					}
-				}catch(Exception ex) {
-					logger.debug("ERROR : On fetching employee for email : " + signUpRequest.getReportTo());
-					logger.debug("ERROR : Message : " + ex.getMessage());
+				}
+				else {
+					return new ResponseEntity<Message>(new Message("The user is not reporting to anyone."), HttpStatus.BAD_REQUEST);
 				}
 			}
+			else {
+				user.setManagerEmail(signUpRequest.getReportTo());
+			}
+			
 			user.setEmployeeDetails(empDetails);
 			employeeRepository.save(user);
 		}catch(IllegalArgumentException ex) {
