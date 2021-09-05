@@ -9,6 +9,6 @@ public interface IAuthService {
 
 	public ResponseEntity<?> authenticateUser(LoginRequest loginRequest);
 
-	public ResponseEntity<?> registerUser(SignupRequest signUpRequest);
+	public ResponseEntity<?> registerUser(SignupRequest signUpRequest) throws Exception;
 
 }

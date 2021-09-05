@@ -12,8 +12,6 @@ import com.management.employee.payload.EmployeeDetailsRequest;
 import com.management.employee.payload.SignupRequest;
 import com.management.employee.service.IEmployeeService;
 
-import javassist.NotFoundException;
-
 
 @RestController
 @RequestMapping(value = "/api/employee")
@@ -28,7 +26,7 @@ public class EmployeeController {
 	
 	@PreAuthorize("hasRole('USER') or hasRole('HR') or hasRole('ADMIN') or hasRole('MANAGER')")
 	@RequestMapping(value = "/update", method = RequestMethod.POST)
-	public ResponseEntity<?> saveEmployeeDetails(@RequestBody EmployeeDetailsRequest employeeDetailsReq) throws NotFoundException{
+	public ResponseEntity<?> saveEmployeeDetails(@RequestBody EmployeeDetailsRequest employeeDetailsReq) throws Exception{
 
 		return employeeService.saveEmployeeDetails(employeeDetailsReq);
 	}

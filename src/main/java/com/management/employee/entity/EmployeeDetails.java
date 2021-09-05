@@ -3,11 +3,14 @@ package com.management.employee.entity;
 import java.io.Serializable;
 import java.sql.Date;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -78,14 +81,23 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 	
 	@OneToOne(mappedBy = "employeeDetails")
 	private Employee employee;
+	
+	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JoinColumn(name = "designation_id")
+	private Designation designation;
+	
+	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JoinColumn(name = "emp_status_id")
+	private EmployeeStatus empStatus;
+	
 
 	public EmployeeDetails() {
 		super();
 	}
 
-	public EmployeeDetails(Long id, String firstName, String middleName, String lastName, String phone, String mobile,
+	public EmployeeDetails(String firstName, String middleName, String lastName, String phone, String mobile,
 			String address, String state, String city, String zip, Gender gender, Date dateOfJoining, Date dateOfBirth,
-			boolean isActive, boolean deleted) {
+			boolean isActive, boolean deleted, Designation designation, EmployeeStatus empStatus) {
 		super();
 		this.firstName = firstName;
 		this.middleName = middleName;
@@ -101,6 +113,8 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 		this.dateOfBirth = dateOfBirth;
 		this.isActive = isActive;
 		this.deleted = deleted;
+		this.designation = designation;
+		this.empStatus = empStatus;
 	}
 
 	public Long getId() {
@@ -210,6 +224,22 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 	public void setActive(boolean isActive) {
 		this.isActive = isActive;
 	}
+	
+	public Designation getDesignation() {
+		return designation;
+	}
+
+	public void setDesignation(Designation designation) {
+		this.designation = designation;
+	}
+
+	public EmployeeStatus getEmpStatus() {
+		return empStatus;
+	}
+
+	public void setEmpStatus(EmployeeStatus empStatus) {
+		this.empStatus = empStatus;
+	}
 
 	public boolean isDeleted() {
 		return deleted;
@@ -224,11 +254,8 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 		return "EmployeeDetails [id=" + id + ", firstName=" + firstName + ", middleName=" + middleName + ", lastName="
 				+ lastName + ", phone=" + phone + ", mobile=" + mobile + ", address=" + address + ", state=" + state
 				+ ", city=" + city + ", zip=" + zip + ", gender=" + gender + ", dateOfJoining=" + dateOfJoining
-				+ ", dateOfBirth=" + dateOfBirth + ", isActive=" + isActive + ", deleted=" + deleted + "]";
+				+ ", dateOfBirth=" + dateOfBirth + ", isActive=" + isActive + ", deleted=" + deleted + ", employee="
+				+ employee + ", designation=" + designation + ", empStatus=" + empStatus + "]";
 	}
 
-	
-	
-
-		
 }

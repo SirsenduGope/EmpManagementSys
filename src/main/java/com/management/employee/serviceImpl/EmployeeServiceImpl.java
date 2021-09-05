@@ -15,14 +15,18 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import com.management.employee.entity.Designation;
 import com.management.employee.entity.Employee;
 import com.management.employee.entity.EmployeeDetails;
+import com.management.employee.entity.EmployeeStatus;
 import com.management.employee.entity.Role;
 import com.management.employee.enums.Roles;
 import com.management.employee.payload.EmployeeDetailsRequest;
 import com.management.employee.payload.Message;
 import com.management.employee.payload.SignupRequest;
+import com.management.employee.repository.DesignationRepository;
 import com.management.employee.repository.EmployeeRepository;
+import com.management.employee.repository.EmployeeStatusRepository;
 import com.management.employee.repository.RoleRepository;
 import com.management.employee.service.IEmployeeService;
 import com.management.employee.utils.Helper;
@@ -35,13 +39,19 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	private EmployeeRepository empRepo;
 	private PasswordEncoder encoder;
 	private RoleRepository roleRepository;
+	private DesignationRepository designationRepository;
+	private EmployeeStatusRepository empStatusRepository;
 	
 	public EmployeeServiceImpl(final EmployeeRepository empRepo,
 			final PasswordEncoder encoder,
-			final RoleRepository roleRepository) {
+			final RoleRepository roleRepository,
+			DesignationRepository designationRepository,
+			EmployeeStatusRepository empStatusRepository) {
 		this.empRepo = empRepo;
 		this.encoder = encoder;
 		this.roleRepository = roleRepository;
+		this.designationRepository = designationRepository;
+		this.empStatusRepository = empStatusRepository;
 	}
 	
 	private static final Logger logger = LoggerFactory.getLogger(EmployeeServiceImpl.class);
@@ -193,7 +203,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	
 	
 	@Override
-	public ResponseEntity<?> saveEmployeeDetails(EmployeeDetailsRequest employeeDetailsReq) throws NotFoundException{
+	public ResponseEntity<?> saveEmployeeDetails(EmployeeDetailsRequest employeeDetailsReq) throws Exception{
 		Employee newEmployee = new Employee();
 		String loggedInUSerEmail = Helper.loggedInUserEmailId();
 		String authority = Helper.loggedInUserAuthority();
@@ -204,7 +214,6 @@ public class EmployeeServiceImpl implements IEmployeeService{
 				Optional<Employee> emp = empRepo.findById(Long.parseLong(employeeDetailsReq.getId()));
 				if(emp.isPresent()) {
 					Employee employee = emp.get();
-					System.out.println("Employee :" + employee.toString());
 					
 					if(authority.equals(Roles.ROLE_USER.name())) {
 						if(!loggedInUSerEmail.equals(employee.getEmail())) {
@@ -243,17 +252,43 @@ public class EmployeeServiceImpl implements IEmployeeService{
 						updatedEmpDetails.setDateOfBirth(employeeDetailsReq.getEmployeeDetails().getDateOfBirth());
 						updatedEmpDetails.setDateOfJoining(employeeDetailsReq.getEmployeeDetails().getDateOfJoining());
 						
+						if(employeeDetailsReq.getDesignation() != null) {
+							Optional<Designation> empDesignation = designationRepository.findByDesignation(employeeDetailsReq.getDesignation());
+							if(empDesignation.isPresent()) {
+								updatedEmpDetails.setDesignation(empDesignation.get());
+							}
+							else {
+								Designation newDesignation = designationRepository.save(new Designation(employeeDetailsReq.getDesignation()));
+								if(newDesignation != null) {
+									updatedEmpDetails.setDesignation(newDesignation);
+								}
+							}
+						}
+						
+						if(employeeDetailsReq.getStatus() != null) {
+							Optional<EmployeeStatus> empStatus = empStatusRepository.findByStatus(employeeDetailsReq.getStatus());
+							if(empStatus.isPresent()) {
+								updatedEmpDetails.setEmpStatus(empStatus.get());
+							}
+							else {
+								EmployeeStatus newEmpStatus = empStatusRepository.save(new EmployeeStatus(employeeDetailsReq.getStatus()));
+								if(newEmpStatus != null) {
+									updatedEmpDetails.setEmpStatus(newEmpStatus);
+								}
+							}
+						}
+						
 						employee.setEmployeeDetails(updatedEmpDetails);
 						newEmployee = empRepo.save(employee);
 					}catch(Exception ex) {
 						logger.debug("ERROR : Unalbe to save employee object");
 						logger.debug("Error : Error message is : " + ex.getMessage());
-						throw new Exception("ERROR : Unalbe to save employee object");
+						throw new Exception("ERROR : Unalbe to save employee object.", ex);
 					}
 					
 					
 				}
-			}catch(Exception ex) {
+			}catch(NotFoundException ex) {
 				logger.debug("ERROR : No Employye found for id : " + employeeDetailsReq.getId());
 				logger.debug("Stack Trace : " + ex.getStackTrace());
 				throw new NotFoundException("Employee not found for id :" + employeeDetailsReq.getId());

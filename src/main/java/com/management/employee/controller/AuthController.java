@@ -29,7 +29,7 @@ public class AuthController {
 
 	
 	@RequestMapping(value = "/signup", method = RequestMethod.POST)
-	public ResponseEntity<?> registerUser(@RequestBody SignupRequest signUpRequest) {
+	public ResponseEntity<?> registerUser(@RequestBody SignupRequest signUpRequest) throws Exception {
 		return authService.registerUser(signUpRequest);
 	}
 

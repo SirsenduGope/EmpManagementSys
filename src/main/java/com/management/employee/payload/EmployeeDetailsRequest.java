@@ -6,6 +6,8 @@ public class EmployeeDetailsRequest {
 	
 	private String id;
 	private EmployeeDetails employeeDetails;
+	private String designation;
+	private String status;
 	
 	
 	public EmployeeDetailsRequest() {
@@ -13,10 +15,13 @@ public class EmployeeDetailsRequest {
 	}
 	
 	
-	public EmployeeDetailsRequest(String id, EmployeeDetails employeeDetails) {
+	public EmployeeDetailsRequest(String id, EmployeeDetails employeeDetails,
+			String designation, String status) {
 		super();
 		this.id = id;
 		this.employeeDetails = employeeDetails;
+		this.designation = designation;
+		this.status = status;
 	}
 
 
@@ -32,7 +37,17 @@ public class EmployeeDetailsRequest {
 	public void setEmployeeDetails(EmployeeDetails employeeDetails) {
 		this.employeeDetails = employeeDetails;
 	}
-	
-	
+	public String getDesignation() {
+		return designation;
+	}
+	public void setDesignation(String designation) {
+		this.designation = designation;
+	}
+	public String getStatus() {
+		return status;
+	}
+	public void setStatus(String status) {
+		this.status = status;
+	}
 
 }

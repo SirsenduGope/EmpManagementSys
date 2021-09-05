@@ -13,7 +13,7 @@ public interface IEmployeeService {
 
 	public ResponseEntity<?> createNewEmployee(SignupRequest signupRequest) throws NotFoundException, Exception;
 
-	public ResponseEntity<?> saveEmployeeDetails(EmployeeDetailsRequest employeeDetailsReq) throws NotFoundException;
+	public ResponseEntity<?> saveEmployeeDetails(EmployeeDetailsRequest employeeDetailsReq) throws NotFoundException, Exception;
 
 	public ResponseEntity<?> getEmployeeById(String id) throws Exception;
 

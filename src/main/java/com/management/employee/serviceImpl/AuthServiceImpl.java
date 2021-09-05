@@ -74,7 +74,7 @@ public class AuthServiceImpl implements IAuthService {
 	}
 
 	@Override
-	public ResponseEntity<?> registerUser(SignupRequest signUpRequest) {
+	public ResponseEntity<?> registerUser(SignupRequest signUpRequest) throws Exception {
 		if (employeeRepository.existsByEmail(signUpRequest.getEmail())) {
 			return ResponseEntity
 					.badRequest()
@@ -157,10 +157,12 @@ public class AuthServiceImpl implements IAuthService {
 			employeeRepository.save(user);
 		}catch(IllegalArgumentException ex) {
 			logger.debug("Illigal argument exception on saving new employee, "+ex.getMessage());
+			throw new IllegalArgumentException("Illigal argument exception on saving new employee");
 		}
 		catch(Exception ex) {
 			logger.debug("ERROR : Exception on new employee register : " + ex.getMessage());
 			logger.debug("Exception : " + ex.getStackTrace());
+			throw new Exception(ex);
 		}
 
 		return ResponseEntity.ok(new Message("User registered successfully!"));
