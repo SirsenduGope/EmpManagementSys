@@ -1,5 +1,6 @@
 package com.management.employee.serviceImpl;
 
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -253,29 +254,38 @@ public class EmployeeServiceImpl implements IEmployeeService{
 						updatedEmpDetails.setDateOfJoining(employeeDetailsReq.getEmployeeDetails().getDateOfJoining());
 						
 						if(employeeDetailsReq.getDesignation() != null) {
-							Optional<Designation> empDesignation = designationRepository.findByDesignation(employeeDetailsReq.getDesignation());
-							if(empDesignation.isPresent()) {
-								updatedEmpDetails.setDesignation(empDesignation.get());
-							}
-							else {
-								Designation newDesignation = designationRepository.save(new Designation(employeeDetailsReq.getDesignation()));
-								if(newDesignation != null) {
-									updatedEmpDetails.setDesignation(newDesignation);
+							try{
+								Optional<Designation> empDesignation = designationRepository.findByDesignation(employeeDetailsReq.getDesignation());
+								if(empDesignation.isPresent()) {
+									updatedEmpDetails.setDesignation(empDesignation.get());
 								}
+								else {
+									Designation newDesignation = designationRepository.save(new Designation(employeeDetailsReq.getDesignation()));
+									if(newDesignation != null) {
+										updatedEmpDetails.setDesignation(newDesignation);
+									}
+								}
+							}catch(IllegalArgumentException ex) {
+								throw new IllegalArgumentException("ERROR : While fetching existing or creating new designation from DB", ex);
 							}
+							
 						}
 						
-						if(employeeDetailsReq.getStatus() != null) {
-							Optional<EmployeeStatus> empStatus = empStatusRepository.findByStatus(employeeDetailsReq.getStatus());
-							if(empStatus.isPresent()) {
-								updatedEmpDetails.setEmpStatus(empStatus.get());
-							}
-							else {
-								EmployeeStatus newEmpStatus = empStatusRepository.save(new EmployeeStatus(employeeDetailsReq.getStatus()));
-								if(newEmpStatus != null) {
-									updatedEmpDetails.setEmpStatus(newEmpStatus);
+						try {
+							if(employeeDetailsReq.getStatus() != null) {
+								Optional<EmployeeStatus> empStatus = empStatusRepository.findByStatus(employeeDetailsReq.getStatus());
+								if(empStatus.isPresent()) {
+									updatedEmpDetails.setEmpStatus(empStatus.get());
+								}
+								else {
+									EmployeeStatus newEmpStatus = empStatusRepository.save(new EmployeeStatus(employeeDetailsReq.getStatus()));
+									if(newEmpStatus != null) {
+										updatedEmpDetails.setEmpStatus(newEmpStatus);
+									}
 								}
 							}
+						}catch(IllegalArgumentException ex) {
+							throw new IllegalArgumentException("ERROR : While fetching existing or creating new employee status from DB", ex);
 						}
 						
 						employee.setEmployeeDetails(updatedEmpDetails);
@@ -292,6 +302,14 @@ public class EmployeeServiceImpl implements IEmployeeService{
 				logger.debug("ERROR : No Employye found for id : " + employeeDetailsReq.getId());
 				logger.debug("Stack Trace : " + ex.getStackTrace());
 				throw new NotFoundException("Employee not found for id :" + employeeDetailsReq.getId());
+			}
+		}
+		else {
+			if(employeeDetailsReq.getId() == null) {
+				throw new NotFoundException("Employee Id is not found");
+			}
+			if(employeeDetailsReq.getEmployeeDetails().getFirstName() == null) {
+				throw new NotFoundException("First name is not found");
 			}
 		}
 		return new ResponseEntity<Employee>(newEmployee, HttpStatus.OK);
