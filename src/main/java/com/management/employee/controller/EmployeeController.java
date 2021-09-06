@@ -62,5 +62,12 @@ public class EmployeeController {
 
 		return employeeService.deleteEmployeeById(id);
 	}
+	
+	@PreAuthorize("hasRole('HR') or hasRole('ADMIN')")
+	@RequestMapping(value = "/list/{role}", method = RequestMethod.GET)
+	public ResponseEntity<?> getEmployeesByRole(@PathVariable("role") String role) throws Exception{
+
+		return employeeService.getEmployeesByRole(role);
+	}
 
 }

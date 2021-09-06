@@ -1,6 +1,7 @@
 package com.management.employee.serviceImpl;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -64,13 +65,28 @@ public class EmployeeServiceImpl implements IEmployeeService{
 		String authority = Helper.loggedInUserAuthority();
 		Optional<List<Employee>> employees = Optional.empty();
 
-		if(authority.equals(Roles.ROLE_MANAGER.name()) || authority.equals(Roles.ROLE_HR.name())) {
+		if(authority.equals(Roles.ROLE_MANAGER.name())) {
 			employees = empRepo.findByReportTo(loggedInUserEmailId);
 			if(employees.isPresent()) {
 				return new ResponseEntity<List<Employee>>(employees.get(), HttpStatus.OK);
 			}
 			else {
 				return new ResponseEntity<Message>(new Message("No User present for manager :" + loggedInUserEmailId), HttpStatus.OK);
+			}
+		}
+		else if(authority.equals(Roles.ROLE_HR.name())) {
+			employees = empRepo.findByReportTo(loggedInUserEmailId);
+			if(employees.isPresent()) {
+				List<Employee> users = new ArrayList<Employee>();
+				for(Employee manager : employees.get()) {
+					Optional<List<Employee>> usersUnderManger = empRepo.findByReportTo(manager.getEmail());
+					if(usersUnderManger.isPresent()) {
+						users.addAll(usersUnderManger.get());
+					}
+				}
+				if(users.size() > 0) {
+					employees.get().addAll(users);
+				}
 			}
 		}
 		else if(authority.equals(Roles.ROLE_USER.name())) {
@@ -457,5 +473,78 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	}
 	
 	
+	
+	@Override
+	public ResponseEntity<?> getEmployeesByRole(String role) throws Exception{
+		Optional<List<Employee>> employees = Optional.empty();
+		String loggedInUSerEmail = Helper.loggedInUserEmailId();
+		String authority = Helper.loggedInUserAuthority();
+		
+		try {
+			if(role != null) {
+				if(authority.equals(Roles.ROLE_HR.name())) {
+					//Getting all the users under an HR
+					if(role.equals(Roles.ROLE_USER.value)) {
+						try {
+							Optional<List<Employee>> managers = Optional.empty();
+							managers = empRepo.findByReportTo(loggedInUSerEmail);
+							if(managers.isPresent()) {
+								List<Employee> users = new ArrayList<Employee>();
+								for(Employee manager : managers.get()) {
+									Optional<List<Employee>> usersUnderManger = empRepo.findByReportTo(manager.getEmail());
+									if(usersUnderManger.isPresent()) {
+										users.addAll(usersUnderManger.get());
+									}
+								}
+								employees = Optional.of(users);
+							}
+						}catch(Exception ex) {
+							throw new Exception("ERROR : Error on getting users." + ex.getMessage());
+						}
+					}
+					//Getting all the managers under an HR
+					else if(role.equals(Roles.ROLE_MANAGER.value)) {
+						try {
+							Optional<List<Employee>> managers = Optional.empty();
+							managers = empRepo.findByReportTo(loggedInUSerEmail);
+							if(managers.isPresent()) {
+								employees = managers;
+							}
+						}catch(Exception ex) {
+							throw new Exception("ERROR : Error on getting users." + ex.getMessage());
+						}
+					}
+					else if(role.equals(Roles.ROLE_HR.value) || role.equals(Roles.ROLE_ADMIN.value)) {
+						return new ResponseEntity<Message>(new Message("To get this list of users, you need to login as Admin"), HttpStatus.BAD_REQUEST); 
+					}
+				}
+				if(authority.equals(Roles.ROLE_ADMIN.name())) {
+					try {
+						Optional<Role> existingRole = roleRepository.findByName(Roles.get(role).name());
+						if(existingRole.isPresent()) {
+							employees = empRepo.findByRoleId(existingRole.get().getId());
+						}
+					}catch(Exception ex) {
+						throw new Exception("ERROR : Error on getting users." + ex.getMessage());
+					}
+				}
+			}
+			else {
+				return new ResponseEntity<Message>(new Message("Role should not be null"), HttpStatus.BAD_REQUEST);
+			}
+		}catch(EntityNotFoundException ex) {
+			logger.debug("ERROR : No Employyes found for role : [" + role + "]");
+			logger.debug("Stack Trace : " + ex.getStackTrace());
+			throw new EntityNotFoundException("ERROR : No Employyes found for role : [" + role + "]");
+		}
+		catch(Exception ex) {
+			logger.debug("ERROR : Error message : " + ex.getMessage());
+			logger.debug("ERROR : Stack Trace : " + ex.getStackTrace());
+			throw new Exception(ex);
+		}
+		
+		return new ResponseEntity<List<Employee>>(employees.get(), HttpStatus.OK);
+	}
+//	
 	
 }

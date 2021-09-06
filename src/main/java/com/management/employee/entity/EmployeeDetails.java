@@ -18,6 +18,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.management.employee.enums.Gender;
 
 @Entity
@@ -84,10 +85,12 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 	
 	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "designation_id")
+	@JsonIgnoreProperties(value = {"employee_details", "hibernateLazyInitializer"})
 	private Designation designation;
 	
 	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "emp_status_id")
+	@JsonIgnoreProperties(value = {"employee_details", "hibernateLazyInitializer"})
 	private EmployeeStatus empStatus;
 	
 

@@ -19,4 +19,6 @@ public interface IEmployeeService {
 
 	public ResponseEntity<?> deleteEmployeeById(String id) throws Exception;
 
+	public ResponseEntity<?> getEmployeesByRole(String role) throws Exception;
+
 }
