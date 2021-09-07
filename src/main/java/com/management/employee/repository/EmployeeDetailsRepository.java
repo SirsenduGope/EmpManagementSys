@@ -13,4 +13,6 @@ public interface EmployeeDetailsRepository extends JpaRepository<EmployeeDetails
 	
 	Optional<List<EmployeeDetails>> findByDesignationId(Integer id);
 
+	Optional<List<EmployeeDetails>> findByEmpStatusId(int parseInt);
+
 }

@@ -12,4 +12,6 @@ public interface EmployeeStatusRepository extends JpaRepository<EmployeeStatus, 
 	
 	Optional<EmployeeStatus> findByStatus(String status);
 
+	Boolean existsByStatus(String status);
+
 }
