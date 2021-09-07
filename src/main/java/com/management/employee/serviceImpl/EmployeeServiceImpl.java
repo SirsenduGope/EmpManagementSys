@@ -1,6 +1,5 @@
 package com.management.employee.serviceImpl;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -47,8 +46,8 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	public EmployeeServiceImpl(final EmployeeRepository empRepo,
 			final PasswordEncoder encoder,
 			final RoleRepository roleRepository,
-			DesignationRepository designationRepository,
-			EmployeeStatusRepository empStatusRepository) {
+			final DesignationRepository designationRepository,
+			final EmployeeStatusRepository empStatusRepository) {
 		this.empRepo = empRepo;
 		this.encoder = encoder;
 		this.roleRepository = roleRepository;

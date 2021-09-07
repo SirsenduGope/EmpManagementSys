@@ -11,6 +11,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -83,12 +84,12 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 	@OneToOne(mappedBy = "employeeDetails")
 	private Employee employee;
 	
-	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "designation_id")
 	@JsonIgnoreProperties(value = {"employee_details", "hibernateLazyInitializer"})
 	private Designation designation;
 	
-	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "emp_status_id")
 	@JsonIgnoreProperties(value = {"employee_details", "hibernateLazyInitializer"})
 	private EmployeeStatus empStatus;
