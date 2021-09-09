@@ -94,6 +94,11 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 	@JsonIgnoreProperties(value = {"employee_details", "hibernateLazyInitializer"})
 	private EmployeeStatus empStatus;
 	
+	@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JoinColumn(name = "org_id")
+	@JsonIgnoreProperties(value = {"employee_details", "hibernateLazyInitializer"})
+	private OrganizationDetails orgDetails;
+	
 
 	public EmployeeDetails() {
 		super();
@@ -251,6 +256,14 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 
 	public void setDeleted(boolean deleted) {
 		this.deleted = deleted;
+	}
+
+	public OrganizationDetails getOrgDetails() {
+		return orgDetails;
+	}
+
+	public void setOrgDetails(OrganizationDetails orgDetails) {
+		this.orgDetails = orgDetails;
 	}
 
 	@Override

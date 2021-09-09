@@ -10,6 +10,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -36,6 +37,11 @@ public class LeaveDetails extends Auditable<String> implements Serializable {
 	@JoinColumn(name = "employee_id")
 	@JsonIgnoreProperties(value = {"leave_details", "hibernateLazyInitializer"})
 	private Employee employee;
+	
+	@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JoinColumn(name = "org_id")
+	@JsonIgnoreProperties(value = {"leave_details", "hibernateLazyInitializer"})
+	private OrganizationDetails orgDetails;
 	
 	@Column(name = "total_casual_leave")
 	private Integer noOfCasualLeave;
@@ -153,6 +159,14 @@ public class LeaveDetails extends Auditable<String> implements Serializable {
 
 	public void setDeleted(boolean deleted) {
 		this.deleted = deleted;
+	}
+
+	public OrganizationDetails getOrgDetails() {
+		return orgDetails;
+	}
+
+	public void setOrgDetails(OrganizationDetails orgDetails) {
+		this.orgDetails = orgDetails;
 	}
 
 	

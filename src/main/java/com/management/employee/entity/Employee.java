@@ -15,6 +15,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -59,6 +60,11 @@ public class Employee extends Auditable<String> implements Serializable {
 				inverseJoinColumns = @JoinColumn(name = "role_id"))
 	private Set<Role> roles = new HashSet<>();
 	
+	@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JoinColumn(name = "org_id")
+	@JsonIgnoreProperties(value = {"employees", "hibernateLazyInitializer"})
+	private OrganizationDetails orgDetails;
+	
 	@OneToMany(mappedBy = "employee")
 	private List<LeaveRecord> leaveRecord;
 	
@@ -88,13 +94,15 @@ public class Employee extends Auditable<String> implements Serializable {
 	}
 
 	
-	public Employee(String email, String password, String managerEmail, EmployeeDetails employeeDetails, Set<Role> roles) {
+	public Employee(String email, String password, String managerEmail, 
+			EmployeeDetails employeeDetails, Set<Role> roles, OrganizationDetails orgDetails) {
 		super();
 		this.email = email;
 		this.password = password;
 		this.managerEmail = managerEmail;
 		this.employeeDetails = employeeDetails;
 		this.roles = roles;
+		this.orgDetails = orgDetails;
 	}
 
 	public Long getId() {
@@ -148,6 +156,14 @@ public class Employee extends Auditable<String> implements Serializable {
 
 	public void setManagerEmail(String manager) {
 		this.managerEmail = manager;
+	}
+
+	public OrganizationDetails getOrgDetails() {
+		return orgDetails;
+	}
+
+	public void setOrgDetails(OrganizationDetails orgDetails) {
+		this.orgDetails = orgDetails;
 	}
 
 
