@@ -2,6 +2,7 @@ package com.management.employee.entity;
 
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -14,6 +15,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -56,6 +58,12 @@ public class Employee extends Auditable<String> implements Serializable {
 				joinColumns = @JoinColumn(name = "employee_id"), 
 				inverseJoinColumns = @JoinColumn(name = "role_id"))
 	private Set<Role> roles = new HashSet<>();
+	
+	@OneToMany(mappedBy = "employee")
+	private List<LeaveRecord> leaveRecord;
+	
+	@OneToOne(mappedBy = "employee")
+	private LeaveDetails leaveDetails;
 	
 	@JsonIgnore
 	@Column(name = "deleted", columnDefinition = "bit(1) default b'0'")
