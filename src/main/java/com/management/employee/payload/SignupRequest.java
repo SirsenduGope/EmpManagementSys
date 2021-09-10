@@ -10,6 +10,7 @@ public class SignupRequest {
     private String firstName;
     private String lastName;
     private String reportTo;
+    private String organizationName;
   
     public String getEmail() {
         return email;
@@ -57,5 +58,13 @@ public class SignupRequest {
 
 	public void setReportTo(String reportTo) {
 		this.reportTo = reportTo;
+	}
+
+	public String getOrganizationName() {
+		return organizationName;
+	}
+
+	public void setOrganizationName(String organizationName) {
+		this.organizationName = organizationName;
 	}
 }

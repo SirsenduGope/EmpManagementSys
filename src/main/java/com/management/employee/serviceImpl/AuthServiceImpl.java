@@ -22,6 +22,7 @@ import com.management.employee.CustomUserDetails;
 import com.management.employee.controller.AuthController;
 import com.management.employee.entity.Employee;
 import com.management.employee.entity.EmployeeDetails;
+import com.management.employee.entity.OrganizationDetails;
 import com.management.employee.entity.Role;
 import com.management.employee.enums.Roles;
 import com.management.employee.payload.JwtResponse;
@@ -29,6 +30,7 @@ import com.management.employee.payload.LoginRequest;
 import com.management.employee.payload.Message;
 import com.management.employee.payload.SignupRequest;
 import com.management.employee.repository.EmployeeRepository;
+import com.management.employee.repository.OrganizationRepository;
 import com.management.employee.repository.RoleRepository;
 import com.management.employee.security.jwt.JwtUtils;
 import com.management.employee.service.IAuthService;
@@ -50,6 +52,9 @@ public class AuthServiceImpl implements IAuthService {
 
 	@Autowired
 	JwtUtils jwtUtils;
+	
+	@Autowired
+	OrganizationRepository orgDetailsRepo;
 	
 	private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 	
@@ -87,74 +92,82 @@ public class AuthServiceImpl implements IAuthService {
 		
 		EmployeeDetails empDetails = new EmployeeDetails();
 
-		Set<String> strRoles = signUpRequest.getRole();
+//		Set<String> strRoles = signUpRequest.getRole();
 		Set<Role> roles = new HashSet<>();
+		Role userRole = roleRepository.findByRole(Roles.ROLE_ADMIN)
+				.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+		roles.add(userRole);
 
-		if (strRoles == null) {
-			Role userRole = roleRepository.findByRole(Roles.ROLE_USER)
-					.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-			roles.add(userRole);
-		} else {
-			strRoles.forEach(role -> {
-				switch (role) {
-				case "admin":
-					Role adminRole = roleRepository.findByRole(Roles.ROLE_ADMIN)
-							.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-					roles.add(adminRole);
-					
-					signUpRequest.setReportTo(signUpRequest.getEmail());
-
-					break;
-				case "hr":
-					Role hrRole = roleRepository.findByRole(Roles.ROLE_HR)
-							.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-					roles.add(hrRole);
-
-					break;
-				case "manager":
-					Role managerRole = roleRepository.findByRole(Roles.ROLE_MANAGER)
-							.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-					roles.add(managerRole);
-
-					break;
-				default:
-					Role userRole = roleRepository.findByRole(Roles.ROLE_USER)
-							.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-					roles.add(userRole);
-				}
-			});
-		}
+//		if (strRoles == null) {
+//			Role userRole = roleRepository.findByRole(Roles.ROLE_USER)
+//					.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+//			roles.add(userRole);
+//		} else {
+//			strRoles.forEach(role -> {
+//				switch (role) {
+//				case "admin":
+//					Role adminRole = roleRepository.findByRole(Roles.ROLE_ADMIN)
+//							.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+//					roles.add(adminRole);
+//					
+//					signUpRequest.setReportTo(signUpRequest.getEmail());
+//
+//					break;
+//				case "hr":
+//					Role hrRole = roleRepository.findByRole(Roles.ROLE_HR)
+//							.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+//					roles.add(hrRole);
+//
+//					break;
+//				case "manager":
+//					Role managerRole = roleRepository.findByRole(Roles.ROLE_MANAGER)
+//							.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+//					roles.add(managerRole);
+//
+//					break;
+//				default:
+//					Role userRole = roleRepository.findByRole(Roles.ROLE_USER)
+//							.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+//					roles.add(userRole);
+//				}
+//			});
+//		}
 
 		try {
 			user.setRoles(roles);
 			empDetails.setFirstName(signUpRequest.getFirstName());
 			empDetails.setLastName(signUpRequest.getLastName());
 			
-			if(!roles.iterator().next().getRole().name().equals(Roles.ROLE_ADMIN.name())) {
-				if(signUpRequest.getReportTo() != null) {
-					try {
-						Optional<Employee> reportTo = employeeRepository.findByEmail(signUpRequest.getReportTo());
-						if(reportTo.isPresent()) {
-							user.setManagerEmail(reportTo.get().getEmail());
-						}
-						else {
-							logger.debug("No user found for email id : " + signUpRequest.getReportTo());
-						}
-					}catch(Exception ex) {
-						logger.debug("ERROR : On fetching employee for email : " + signUpRequest.getReportTo());
-						logger.debug("ERROR : Message : " + ex.getMessage());
-					}
-				}
-				else {
-					return new ResponseEntity<Message>(new Message("The user is not reporting to anyone."), HttpStatus.BAD_REQUEST);
-				}
-			}
-			else {
-				user.setManagerEmail(signUpRequest.getReportTo());
-			}
+//			if(!roles.iterator().next().getRole().name().equals(Roles.ROLE_ADMIN.name())) {
+//				if(signUpRequest.getReportTo() != null) {
+//					try {
+//						Optional<Employee> reportTo = employeeRepository.findByEmail(signUpRequest.getReportTo());
+//						if(reportTo.isPresent()) {
+//							user.setManagerEmail(reportTo.get().getEmail());
+//						}
+//						else {
+//							logger.debug("No user found for email id : " + signUpRequest.getReportTo());
+//						}
+//					}catch(Exception ex) {
+//						logger.debug("ERROR : On fetching employee for email : " + signUpRequest.getReportTo());
+//						logger.debug("ERROR : Message : " + ex.getMessage());
+//					}
+//				}
+//				else {
+//					return new ResponseEntity<Message>(new Message("The user is not reporting to anyone."), HttpStatus.BAD_REQUEST);
+//				}
+//			}
+//			else {
+//				user.setManagerEmail(signUpRequest.getReportTo());
+//			}
 			
+			user.setManagerEmail(signUpRequest.getEmail());
 			user.setEmployeeDetails(empDetails);
 			employeeRepository.save(user);
+			
+			OrganizationDetails org = new OrganizationDetails(signUpRequest.getOrganizationName());
+			orgDetailsRepo.save(org);
+			
 		}catch(IllegalArgumentException ex) {
 			logger.debug("Illigal argument exception on saving new employee, "+ex.getMessage());
 			throw new IllegalArgumentException("Illigal argument exception on saving new employee");
