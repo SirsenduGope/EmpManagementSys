@@ -39,11 +39,6 @@ public class LeaveRecord extends Auditable<String> implements Serializable {
 	@JsonIgnoreProperties(value = {"leave_record", "hibernateLazyInitializer"})
 	private Employee employee;
 	
-	@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-	@JoinColumn(name = "org_id")
-	@JsonIgnoreProperties(value = {"leave_record", "hibernateLazyInitializer"})
-	private OrganizationDetails orgDetails;
-	
 	@Column(name = "from_date", nullable = false)
 	private Date fromDate;
 	
@@ -123,14 +118,6 @@ public class LeaveRecord extends Auditable<String> implements Serializable {
 
 	public void setStatus(LeaveStatus status) {
 		this.status = status;
-	}
-
-	public OrganizationDetails getOrgDetails() {
-		return orgDetails;
-	}
-
-	public void setOrgDetails(OrganizationDetails orgDetails) {
-		this.orgDetails = orgDetails;
 	}
 
 	public boolean isDeleted() {

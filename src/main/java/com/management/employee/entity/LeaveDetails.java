@@ -10,7 +10,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -38,28 +37,29 @@ public class LeaveDetails extends Auditable<String> implements Serializable {
 	@JsonIgnoreProperties(value = {"leave_details", "hibernateLazyInitializer"})
 	private Employee employee;
 	
-	@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-	@JoinColumn(name = "org_id")
-	@JsonIgnoreProperties(value = {"leave_details", "hibernateLazyInitializer"})
-	private OrganizationDetails orgDetails;
-	
 	@Column(name = "total_casual_leave")
-	private Integer noOfCasualLeave;
+	private Double noOfCasualLeave;
+	
+	@Column(name = "remaining_casual_leave")
+	private Double remainingCasualLeave;
 	
 	@Column(name = "total_sick_leave")
-	private Integer noOfSickLeave;
+	private Double noOfSickLeave;
+	
+	@Column(name = "remaining_sick_leave")
+	private Double remainingSickLeave;
 	
 	@Column(name = "total_earn_leave")
-	private Integer noOfEarnLeave;
+	private Double noOfEarnLeave;
+	
+	@Column(name = "remaining_earn_leave")
+	private Double remainingEarnLeave;
 	
 	@Column(name = "total_leaves")
-	private Integer totalLeaves;
+	private Double totalLeaves;
 	
 	@Column(name = "remaining_leaves")
-	private Integer remainingLeaves;
-	
-	@Column(name = "prv_year_carry")
-	private Integer carryFromPrevYear;
+	private Double remainingLeaves;
 	
 	@Column(name = "total_lop")
 	private Integer totalLOP;
@@ -72,16 +72,19 @@ public class LeaveDetails extends Auditable<String> implements Serializable {
 		super();
 	}
 
-	public LeaveDetails(Employee employee, Integer noOfCasualLeave, Integer noOfSickLeave, Integer noOfEarnLeave,
-			Integer totalLeaves, Integer remainingLeaves, Integer carryFromPrevYear, Integer totalLOP) {
+	public LeaveDetails(Employee employee, Double noOfCasualLeave, Double remainingCasualLeave, Double noOfSickLeave,
+			Double remainingSickLeave, Double noOfEarnLeave, Double remainingEarnLeave, Double totalLeaves,
+			Double remainingLeaves, Integer totalLOP) {
 		super();
 		this.employee = employee;
 		this.noOfCasualLeave = noOfCasualLeave;
+		this.remainingCasualLeave = remainingCasualLeave;
 		this.noOfSickLeave = noOfSickLeave;
+		this.remainingSickLeave = remainingSickLeave;
 		this.noOfEarnLeave = noOfEarnLeave;
+		this.remainingEarnLeave = remainingEarnLeave;
 		this.totalLeaves = totalLeaves;
 		this.remainingLeaves = remainingLeaves;
-		this.carryFromPrevYear = carryFromPrevYear;
 		this.totalLOP = totalLOP;
 	}
 
@@ -97,52 +100,68 @@ public class LeaveDetails extends Auditable<String> implements Serializable {
 		this.employee = employee;
 	}
 
-	public Integer getNoOfCasualLeave() {
+	public Double getNoOfCasualLeave() {
 		return noOfCasualLeave;
 	}
 
-	public void setNoOfCasualLeave(Integer noOfCasualLeave) {
+	public void setNoOfCasualLeave(Double noOfCasualLeave) {
 		this.noOfCasualLeave = noOfCasualLeave;
 	}
 
-	public Integer getNoOfSickLeave() {
+	public Double getRemainingCasualLeave() {
+		return remainingCasualLeave;
+	}
+
+	public void setRemainingCasualLeave(Double remainingCasualLeave) {
+		this.remainingCasualLeave = remainingCasualLeave;
+	}
+
+	public Double getNoOfSickLeave() {
 		return noOfSickLeave;
 	}
 
-	public void setNoOfSickLeave(Integer noOfSickLeave) {
+	public void setNoOfSickLeave(Double noOfSickLeave) {
 		this.noOfSickLeave = noOfSickLeave;
 	}
 
-	public Integer getNoOfEarnLeave() {
+	public Double getRemainingSickLeave() {
+		return remainingSickLeave;
+	}
+
+	public void setRemainingSickLeave(Double remainingSickLeave) {
+		this.remainingSickLeave = remainingSickLeave;
+	}
+
+	public Double getNoOfEarnLeave() {
 		return noOfEarnLeave;
 	}
 
-	public void setNoOfEarnLeave(Integer noOfEarnLeave) {
+	public void setNoOfEarnLeave(Double noOfEarnLeave) {
 		this.noOfEarnLeave = noOfEarnLeave;
 	}
 
-	public Integer getTotalLeaves() {
+	public Double getRemainingEarnLeave() {
+		return remainingEarnLeave;
+	}
+
+	public void setRemainingEarnLeave(Double remainingEarnLeave) {
+		this.remainingEarnLeave = remainingEarnLeave;
+	}
+
+	public Double getTotalLeaves() {
 		return totalLeaves;
 	}
 
-	public void setTotalLeaves(Integer totalLeaves) {
+	public void setTotalLeaves(Double totalLeaves) {
 		this.totalLeaves = totalLeaves;
 	}
 
-	public Integer getRemainingLeaves() {
+	public Double getRemainingLeaves() {
 		return remainingLeaves;
 	}
 
-	public void setRemainingLeaves(Integer remainingLeaves) {
+	public void setRemainingLeaves(Double remainingLeaves) {
 		this.remainingLeaves = remainingLeaves;
-	}
-
-	public Integer getCarryFromPrevYear() {
-		return carryFromPrevYear;
-	}
-
-	public void setCarryFromPrevYear(Integer carryFromPrevYear) {
-		this.carryFromPrevYear = carryFromPrevYear;
 	}
 
 	public Integer getTotalLOP() {
@@ -159,14 +178,6 @@ public class LeaveDetails extends Auditable<String> implements Serializable {
 
 	public void setDeleted(boolean deleted) {
 		this.deleted = deleted;
-	}
-
-	public OrganizationDetails getOrgDetails() {
-		return orgDetails;
-	}
-
-	public void setOrgDetails(OrganizationDetails orgDetails) {
-		this.orgDetails = orgDetails;
 	}
 
 	
