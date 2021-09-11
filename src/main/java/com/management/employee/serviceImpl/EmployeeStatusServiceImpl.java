@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.persistence.EntityNotFoundException;
+import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,7 @@ public class EmployeeStatusServiceImpl implements IEmployeeStatusService {
 	}
 	
 	
+	@Transactional
 	@Override
 	public ResponseEntity<?> updateEmployeeStatus(EmployeeStatus employeeStatus) throws Exception{
 		EmployeeStatus updatedEmpStatus = new EmployeeStatus();
@@ -78,6 +80,7 @@ public class EmployeeStatusServiceImpl implements IEmployeeStatusService {
 	}
 	
 	
+	@Transactional
 	@Override
 	public ResponseEntity<?> addNewEmployeeStauts(EmployeeStatus newEmployeeStatus) throws Exception{
 		EmployeeStatus empStatus = new EmployeeStatus(); 
@@ -106,6 +109,7 @@ public class EmployeeStatusServiceImpl implements IEmployeeStatusService {
 	}
 	
 	
+	@Transactional
 	@Override
 	public ResponseEntity<?> deleteEmployeeStatusById (String id) throws Exception{
 		try {

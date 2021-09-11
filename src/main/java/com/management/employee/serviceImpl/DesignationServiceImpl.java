@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.persistence.EntityNotFoundException;
+import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,7 @@ public class DesignationServiceImpl implements IDesignationService {
 	}
 	
 	
+	@Transactional
 	@Override
 	public ResponseEntity<?> updateDesigntion(Designation designation) throws Exception{
 		Designation updatedDesignation = new Designation();
@@ -78,6 +80,7 @@ public class DesignationServiceImpl implements IDesignationService {
 	}
 	
 	
+	@Transactional
 	@Override
 	public ResponseEntity<?> addNewDesignation(Designation newDesignation) throws Exception{
 		Designation designation = new Designation(); 
@@ -106,6 +109,7 @@ public class DesignationServiceImpl implements IDesignationService {
 	}
 	
 	
+	@Transactional
 	@Override
 	public ResponseEntity<?> deleteDesignation (String id) throws Exception{
 		try {

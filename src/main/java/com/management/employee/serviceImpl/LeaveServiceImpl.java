@@ -60,20 +60,30 @@ public class LeaveServiceImpl implements ILeaveService {
 			List<LeaveSettings> leaveSettings = leaveSettingsRepo.findAll();
 			if(leaveSettings.size() > 0) {
 				LeaveSettings leaveSetting = leaveSettings.get(0);
+				Double totalLeaves = 0d;
+				Double remainingLeaves = 0d;
 				
 				if(!leaveSetting.isCasualLeaveMonthly()) {
 					leaveDetails.setNoOfCasualLeave(leaveSetting.getCasualLeaveCount());
 					leaveDetails.setRemainingCasualLeave(leaveSetting.getCasualLeaveCount());
+					totalLeaves = totalLeaves + leaveSetting.getCasualLeaveCount();
+					remainingLeaves = remainingLeaves + leaveSetting.getCasualLeaveCount();
 				}
 				if(!leaveSetting.isSickLeaveMonthly()) {
 					leaveDetails.setNoOfSickLeave(leaveSetting.getSickLeaveCount());
 					leaveDetails.setRemainingSickLeave(leaveSetting.getSickLeaveCount());
+					totalLeaves = totalLeaves + leaveSetting.getSickLeaveCount();
+					remainingLeaves = remainingLeaves + leaveSetting.getSickLeaveCount();
 				}
 				if(!leaveSetting.isEarnLeaveMonthly()) {
 					leaveDetails.setNoOfEarnLeave(leaveSetting.getEarnLeaveCount());
 					leaveDetails.setRemainingEarnLeave(leaveSetting.getEarnLeaveCount());
+					totalLeaves = totalLeaves + leaveSetting.getEarnLeaveCount();
+					remainingLeaves = remainingLeaves + leaveSetting.getEarnLeaveCount();
 				}
 				
+				leaveDetails.setTotalLeaves(totalLeaves);
+				leaveDetails.setRemainingLeaves(remainingLeaves);
 				leaveDetails.setEmployee(employee);
 				leaveDetailsRepo.save(leaveDetails);
 				

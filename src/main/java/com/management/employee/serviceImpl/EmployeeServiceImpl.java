@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import javax.persistence.EntityNotFoundException;
+import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,6 +114,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	}
 
 	
+	@Transactional
 	@Override
 	public ResponseEntity<?> createNewEmployee(@RequestBody SignupRequest signupRequest) throws Exception {
 		
@@ -197,6 +199,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 			try {
 				newEmployee = empRepo.saveAndFlush(newEmployee);
 				ResponseEntity<?> response = leaveService.generateLeaveDetailsForEmployee(newEmployee);
+				
 				if(response.getStatusCodeValue() < 200 || response.getStatusCodeValue() > 299) {
 					logger.debug("ERROR : Error occored on setting leave details for employee : " + newEmployee.toString());
 					logger.debug("ERROR : " + response.getBody().toString());
@@ -229,6 +232,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	}
 	
 	
+	@Transactional
 	@Override
 	public ResponseEntity<?> saveEmployeeDetails(EmployeeDetailsRequest employeeDetailsReq) throws Exception{
 		Employee newEmployee = new Employee();
@@ -286,7 +290,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 									updatedEmpDetails.setDesignation(empDesignation.get());
 								}
 								else {
-									Designation newDesignation = designationRepository.save(new Designation(employeeDetailsReq.getDesignation()));
+									Designation newDesignation = designationRepository.saveAndFlush(new Designation(employeeDetailsReq.getDesignation()));
 									if(newDesignation != null) {
 										updatedEmpDetails.setDesignation(newDesignation);
 									}
@@ -304,7 +308,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 									updatedEmpDetails.setEmpStatus(empStatus.get());
 								}
 								else {
-									EmployeeStatus newEmpStatus = empStatusRepository.save(new EmployeeStatus(employeeDetailsReq.getStatus()));
+									EmployeeStatus newEmpStatus = empStatusRepository.saveAndFlush(new EmployeeStatus(employeeDetailsReq.getStatus()));
 									if(newEmpStatus != null) {
 										updatedEmpDetails.setEmpStatus(newEmpStatus);
 									}
@@ -407,6 +411,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	}
 	
 	
+	@Transactional
 	@Override
 	public ResponseEntity<?> deleteEmployeeById(String id) throws Exception{
 		Optional<Employee> emp = Optional.empty();
@@ -555,6 +560,5 @@ public class EmployeeServiceImpl implements IEmployeeService{
 		
 		return new ResponseEntity<List<Employee>>(employees.get(), HttpStatus.OK);
 	}
-//	
 	
 }
