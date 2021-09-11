@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import com.management.employee.entity.Employee;
 import com.management.employee.entity.LeaveSettings;
 import com.management.employee.payload.LeaveDetailsRequest;
+import com.management.employee.payload.LeaveRequest;
 
 public interface ILeaveService {
 
@@ -13,6 +14,8 @@ public interface ILeaveService {
 	public ResponseEntity<?> generateLeaveDetailsForEmployee(Employee employee) throws Exception;
 
 	public ResponseEntity<?> updateLeaveDetailsForEmployee(LeaveDetailsRequest leaveDetailsReq) throws Exception;
+
+	public ResponseEntity<?> requestForLeave(LeaveRequest leaveReq) throws Exception;
 
 
 }
