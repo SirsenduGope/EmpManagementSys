@@ -30,6 +30,7 @@ import com.management.employee.repository.EmployeeRepository;
 import com.management.employee.repository.EmployeeStatusRepository;
 import com.management.employee.repository.RoleRepository;
 import com.management.employee.service.IEmployeeService;
+import com.management.employee.service.ILeaveService;
 import com.management.employee.utils.Helper;
 
 import javassist.NotFoundException;
@@ -43,16 +44,20 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	private DesignationRepository designationRepository;
 	private EmployeeStatusRepository empStatusRepository;
 	
+	private ILeaveService leaveService;
+	
 	public EmployeeServiceImpl(final EmployeeRepository empRepo,
 			final PasswordEncoder encoder,
 			final RoleRepository roleRepository,
 			final DesignationRepository designationRepository,
-			final EmployeeStatusRepository empStatusRepository) {
+			final EmployeeStatusRepository empStatusRepository,
+			final ILeaveService leaveService) {
 		this.empRepo = empRepo;
 		this.encoder = encoder;
 		this.roleRepository = roleRepository;
 		this.designationRepository = designationRepository;
 		this.empStatusRepository = empStatusRepository;
+		this.leaveService = leaveService;
 	}
 	
 	private static final Logger logger = LoggerFactory.getLogger(EmployeeServiceImpl.class);
@@ -190,7 +195,13 @@ public class EmployeeServiceImpl implements IEmployeeService{
 			}
 			
 			try {
-				newEmployee = empRepo.save(newEmployee);
+				newEmployee = empRepo.saveAndFlush(newEmployee);
+				ResponseEntity<?> response = leaveService.generateLeaveDetailsForEmployee(newEmployee);
+				if(response.getStatusCodeValue() < 200 || response.getStatusCodeValue() > 299) {
+					logger.debug("ERROR : Error occored on setting leave details for employee : " + newEmployee.toString());
+					logger.debug("ERROR : " + response.getBody().toString());
+					throw new Exception("ERROR : Error occored on setting leave details for employee : " + newEmployee.toString());
+				}
 			}catch(IllegalArgumentException ex) {
 				logger.debug("ERROR : On create a new employee with object : " + newEmployee.toString());
 				logger.debug("ERROR : Error message is : " + ex.getMessage());

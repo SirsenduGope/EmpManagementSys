@@ -37,28 +37,28 @@ public class LeaveSettings extends Auditable<String> implements Serializable {
 	private Double earnLeaveCount = 0d;
 	
 	@Column(name = "casual_leave_MN")
-	private Boolean casualLeaveMonthly = Boolean.FALSE;
+	private boolean casualLeaveMonthly = Boolean.FALSE;
 	
 	@Column(name = "sick_leave_MN")
-	private Boolean sickLeaveMonthly = Boolean.TRUE;
+	private boolean sickLeaveMonthly = Boolean.TRUE;
 	
 	@Column(name = "earn_leave_MN")
-	private Boolean earnLeaveMonthly = Boolean.TRUE;
+	private boolean earnLeaveMonthly = Boolean.TRUE;
 	
 	@Column(name = "casual_leave_CF")
-	private Boolean casualLeaveCarryFwd = Boolean.FALSE;
+	private boolean casualLeaveCarryFwd = Boolean.FALSE;
 	
 	@Column(name = "sick_leave_CF")
-	private Boolean sickLeaveCarryFwd = Boolean.FALSE;
+	private boolean sickLeaveCarryFwd = Boolean.FALSE;
 	
 	@Column(name = "earn_leave_CF")
-	private Boolean earnLeaveCarryFwd = Boolean.TRUE;
+	private boolean earnLeaveCarryFwd = Boolean.TRUE;
 	
 	@Column(name = "sat_working_day")
-	private Boolean saturdayWorkingDay = Boolean.FALSE;
+	private boolean saturdayWorkingDay = Boolean.FALSE;
 	
 	@Column(name = "sun_working_day")
-	private Boolean sundayWorkingDay = Boolean.FALSE;
+	private boolean sundayWorkingDay = Boolean.FALSE;
 	
 	@JsonIgnore
 	@Column(name = "deleted", columnDefinition = "bit(1) default b'0'")
@@ -69,9 +69,9 @@ public class LeaveSettings extends Auditable<String> implements Serializable {
 	}
 
 	public LeaveSettings(Double casualLeaveCount, Double sickLeaveCount, Double earnLeaveCount,
-			Boolean casualLeaveMonthly, Boolean sickLeaveMonthly, Boolean earnLeaveMonthly, Boolean casualLeaveCarryFwd,
-			Boolean sickLeaveCarryFwd, Boolean earnLeaveCarryFwd, Boolean saturdayWorkingDay, Boolean sundayWorkingDay,
-			boolean deleted) {
+			boolean casualLeaveMonthly, boolean sickLeaveMonthly, boolean earnLeaveMonthly, boolean casualLeaveCarryFwd,
+			boolean sickLeaveCarryFwd, boolean earnLeaveCarryFwd, boolean saturdayWorkingDay,
+			boolean sundayWorkingDay) {
 		super();
 		this.casualLeaveCount = casualLeaveCount;
 		this.sickLeaveCount = sickLeaveCount;
@@ -84,7 +84,6 @@ public class LeaveSettings extends Auditable<String> implements Serializable {
 		this.earnLeaveCarryFwd = earnLeaveCarryFwd;
 		this.saturdayWorkingDay = saturdayWorkingDay;
 		this.sundayWorkingDay = sundayWorkingDay;
-		this.deleted = deleted;
 	}
 
 	public Integer getId() {
@@ -115,67 +114,67 @@ public class LeaveSettings extends Auditable<String> implements Serializable {
 		this.earnLeaveCount = earnLeaveCount;
 	}
 
-	public Boolean getCasualLeaveMonthly() {
+	public boolean isCasualLeaveMonthly() {
 		return casualLeaveMonthly;
 	}
 
-	public void setCasualLeaveMonthly(Boolean casualLeaveMonthly) {
+	public void setCasualLeaveMonthly(boolean casualLeaveMonthly) {
 		this.casualLeaveMonthly = casualLeaveMonthly;
 	}
 
-	public Boolean getSickLeaveMonthly() {
+	public boolean isSickLeaveMonthly() {
 		return sickLeaveMonthly;
 	}
 
-	public void setSickLeaveMonthly(Boolean sickLeaveMonthly) {
+	public void setSickLeaveMonthly(boolean sickLeaveMonthly) {
 		this.sickLeaveMonthly = sickLeaveMonthly;
 	}
 
-	public Boolean getEarnLeaveMonthly() {
+	public boolean isEarnLeaveMonthly() {
 		return earnLeaveMonthly;
 	}
 
-	public void setEarnLeaveMonthly(Boolean earnLeaveMonthly) {
+	public void setEarnLeaveMonthly(boolean earnLeaveMonthly) {
 		this.earnLeaveMonthly = earnLeaveMonthly;
 	}
 
-	public Boolean getCasualLeaveCarryFwd() {
+	public boolean isCasualLeaveCarryFwd() {
 		return casualLeaveCarryFwd;
 	}
 
-	public void setCasualLeaveCarryFwd(Boolean casualLeaveCarryFwd) {
+	public void setCasualLeaveCarryFwd(boolean casualLeaveCarryFwd) {
 		this.casualLeaveCarryFwd = casualLeaveCarryFwd;
 	}
 
-	public Boolean getSickLeaveCarryFwd() {
+	public boolean isSickLeaveCarryFwd() {
 		return sickLeaveCarryFwd;
 	}
 
-	public void setSickLeaveCarryFwd(Boolean sickLeaveCarryFwd) {
+	public void setSickLeaveCarryFwd(boolean sickLeaveCarryFwd) {
 		this.sickLeaveCarryFwd = sickLeaveCarryFwd;
 	}
 
-	public Boolean getEarnLeaveCarryFwd() {
+	public boolean isEarnLeaveCarryFwd() {
 		return earnLeaveCarryFwd;
 	}
 
-	public void setEarnLeaveCarryFwd(Boolean earnLeaveCarryFwd) {
+	public void setEarnLeaveCarryFwd(boolean earnLeaveCarryFwd) {
 		this.earnLeaveCarryFwd = earnLeaveCarryFwd;
 	}
 
-	public Boolean getSaturdayWorkingDay() {
+	public boolean isSaturdayWorkingDay() {
 		return saturdayWorkingDay;
 	}
 
-	public void setSaturdayWorkingDay(Boolean saturdayWorkingDay) {
+	public void setSaturdayWorkingDay(boolean saturdayWorkingDay) {
 		this.saturdayWorkingDay = saturdayWorkingDay;
 	}
 
-	public Boolean getSundayWorkingDay() {
+	public boolean isSundayWorkingDay() {
 		return sundayWorkingDay;
 	}
 
-	public void setSundayWorkingDay(Boolean sundayWorkingDay) {
+	public void setSundayWorkingDay(boolean sundayWorkingDay) {
 		this.sundayWorkingDay = sundayWorkingDay;
 	}
 
@@ -187,5 +186,18 @@ public class LeaveSettings extends Auditable<String> implements Serializable {
 		this.deleted = deleted;
 	}
 
+	@Override
+	public String toString() {
+		return "LeaveSettings [id=" + id + ", casualLeaveCount=" + casualLeaveCount + ", sickLeaveCount="
+				+ sickLeaveCount + ", earnLeaveCount=" + earnLeaveCount + ", casualLeaveMonthly=" + casualLeaveMonthly
+				+ ", sickLeaveMonthly=" + sickLeaveMonthly + ", earnLeaveMonthly=" + earnLeaveMonthly
+				+ ", casualLeaveCarryFwd=" + casualLeaveCarryFwd + ", sickLeaveCarryFwd=" + sickLeaveCarryFwd
+				+ ", earnLeaveCarryFwd=" + earnLeaveCarryFwd + ", saturdayWorkingDay=" + saturdayWorkingDay
+				+ ", sundayWorkingDay=" + sundayWorkingDay + ", deleted=" + deleted + "]";
+	}
+
+	
+	
+	
 	
 }

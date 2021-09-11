@@ -38,31 +38,31 @@ public class LeaveDetails extends Auditable<String> implements Serializable {
 	private Employee employee;
 	
 	@Column(name = "total_casual_leave")
-	private Double noOfCasualLeave;
+	private Double noOfCasualLeave = 0d;
 	
 	@Column(name = "remaining_casual_leave")
-	private Double remainingCasualLeave;
+	private Double remainingCasualLeave = 0d;
 	
 	@Column(name = "total_sick_leave")
-	private Double noOfSickLeave;
+	private Double noOfSickLeave = 0d;
 	
 	@Column(name = "remaining_sick_leave")
-	private Double remainingSickLeave;
+	private Double remainingSickLeave = 0d;
 	
 	@Column(name = "total_earn_leave")
-	private Double noOfEarnLeave;
+	private Double noOfEarnLeave = 0d;
 	
 	@Column(name = "remaining_earn_leave")
-	private Double remainingEarnLeave;
+	private Double remainingEarnLeave = 0d;
 	
 	@Column(name = "total_leaves")
-	private Double totalLeaves;
+	private Double totalLeaves = 0d;
 	
 	@Column(name = "remaining_leaves")
-	private Double remainingLeaves;
+	private Double remainingLeaves = 0d;
 	
 	@Column(name = "total_lop")
-	private Integer totalLOP;
+	private Integer totalLOP = 0;
 	
 	@JsonIgnore
 	@Column(name = "deleted", columnDefinition = "bit(1) default b'0'")
@@ -179,6 +179,17 @@ public class LeaveDetails extends Auditable<String> implements Serializable {
 	public void setDeleted(boolean deleted) {
 		this.deleted = deleted;
 	}
+
+	@Override
+	public String toString() {
+		return "LeaveDetails [id=" + id + ", employee=" + employee + ", noOfCasualLeave=" + noOfCasualLeave
+				+ ", remainingCasualLeave=" + remainingCasualLeave + ", noOfSickLeave=" + noOfSickLeave
+				+ ", remainingSickLeave=" + remainingSickLeave + ", noOfEarnLeave=" + noOfEarnLeave
+				+ ", remainingEarnLeave=" + remainingEarnLeave + ", totalLeaves=" + totalLeaves + ", remainingLeaves="
+				+ remainingLeaves + ", totalLOP=" + totalLOP + ", deleted=" + deleted + "]";
+	}
+	
+	
 
 	
 }
