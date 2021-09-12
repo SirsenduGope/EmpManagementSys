@@ -1,11 +1,11 @@
 package com.management.employee.payload;
 
-import com.management.employee.entity.LeaveDetails;
+import com.management.employee.entity.LeaveCountDetails;
 
 public class LeaveDetailsRequest {
 
 	private String employeeId;
-	private LeaveDetails leaveDetails;
+	private LeaveCountDetails leaveDetails;
 	
 	public String getEmployeeId() {
 		return employeeId;
@@ -13,10 +13,10 @@ public class LeaveDetailsRequest {
 	public void setEmployeeId(String employeeId) {
 		this.employeeId = employeeId;
 	}
-	public LeaveDetails getLeaveDetails() {
+	public LeaveCountDetails getLeaveDetails() {
 		return leaveDetails;
 	}
-	public void setLeaveDetails(LeaveDetails leaveDetails) {
+	public void setLeaveDetails(LeaveCountDetails leaveDetails) {
 		this.leaveDetails = leaveDetails;
 	}
 	

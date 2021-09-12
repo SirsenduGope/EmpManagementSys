@@ -16,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.management.employee.entity.Employee;
-import com.management.employee.entity.LeaveDetails;
+import com.management.employee.entity.LeaveCountDetails;
 import com.management.employee.entity.LeaveRequestRecord;
 import com.management.employee.entity.LeaveSettings;
 import com.management.employee.enums.LeaveStatus;
@@ -25,7 +25,7 @@ import com.management.employee.payload.LeaveDetailsRequest;
 import com.management.employee.payload.LeaveRequest;
 import com.management.employee.payload.Message;
 import com.management.employee.repository.EmployeeRepository;
-import com.management.employee.repository.LeaveDetailsRepository;
+import com.management.employee.repository.LeaveCountDetailsRepository;
 import com.management.employee.repository.LeaveRequestRecordRepository;
 import com.management.employee.repository.LeaveSettingsRepository;
 import com.management.employee.service.ILeaveService;
@@ -35,17 +35,17 @@ import com.management.employee.utils.Helper;
 public class LeaveServiceImpl implements ILeaveService {
 	
 	private LeaveSettingsRepository leaveSettingsRepo;
-	private LeaveDetailsRepository leaveDetailsRepo;
-	private LeaveRequestRecordRepository leaveRecordRepo;
+	private LeaveCountDetailsRepository leaveCountDetailsRepo;
+	private LeaveRequestRecordRepository leaveRequestRecordRepo;
 	private EmployeeRepository empRepo;
 	
 	public LeaveServiceImpl(final LeaveSettingsRepository leaveSettingsRepo,
-			final LeaveDetailsRepository leaveDetailsRepo,
-			final LeaveRequestRecordRepository leaveRecordRepo,
+			final LeaveCountDetailsRepository leaveCountDetailsRepo,
+			final LeaveRequestRecordRepository leaveRequestRecordRepo,
 			final EmployeeRepository empRepo) {
 		this.leaveSettingsRepo = leaveSettingsRepo;
-		this.leaveDetailsRepo = leaveDetailsRepo;
-		this.leaveRecordRepo = leaveRecordRepo;
+		this.leaveCountDetailsRepo = leaveCountDetailsRepo;
+		this.leaveRequestRecordRepo = leaveRequestRecordRepo;
 		this.empRepo = empRepo;
 	}
 	
@@ -71,8 +71,8 @@ public class LeaveServiceImpl implements ILeaveService {
 	
 	@Transactional
 	@Override
-	public ResponseEntity<?> generateLeaveDetailsForEmployee(Employee employee) throws Exception{
-		LeaveDetails leaveDetails = new LeaveDetails();
+	public ResponseEntity<?> generateLeaveCountDetailsForEmployee(Employee employee) throws Exception{
+		LeaveCountDetails leaveDetails = new LeaveCountDetails();
 		try {
 			List<LeaveSettings> leaveSettings = leaveSettingsRepo.findAll();
 			if(leaveSettings.size() > 0) {
@@ -102,7 +102,7 @@ public class LeaveServiceImpl implements ILeaveService {
 				leaveDetails.setTotalLeaves(totalLeaves);
 				leaveDetails.setRemainingLeaves(remainingLeaves);
 				leaveDetails.setEmployee(employee);
-				leaveDetailsRepo.save(leaveDetails);
+				leaveCountDetailsRepo.save(leaveDetails);
 				
 			}
 			else {
@@ -123,24 +123,24 @@ public class LeaveServiceImpl implements ILeaveService {
 
 	@Transactional
 	@Override
-	public ResponseEntity<?> updateLeaveDetailsForEmployee(LeaveDetailsRequest leaveDetailsReq) throws Exception{
-		LeaveDetails leaveDetails = null;
+	public ResponseEntity<?> updateLeaveCountDetailsForEmployee(LeaveDetailsRequest leaveDetailsReq) throws Exception{
+		LeaveCountDetails leaveCountDetails = null;
 		try {
 			if(leaveDetailsReq.getEmployeeId() != null) {
-				Optional<LeaveDetails> leaveDtl = leaveDetailsRepo.findByEmployeeId(Long.parseLong(leaveDetailsReq.getEmployeeId()));
+				Optional<LeaveCountDetails> leaveDtl = leaveCountDetailsRepo.findByEmployeeId(Long.parseLong(leaveDetailsReq.getEmployeeId()));
 				if(leaveDtl.isPresent()) {
-					leaveDetails = leaveDtl.get();
-					leaveDetails.setNoOfCasualLeave(leaveDetailsReq.getLeaveDetails().getNoOfCasualLeave());
-					leaveDetails.setNoOfSickLeave(leaveDetailsReq.getLeaveDetails().getNoOfSickLeave());
-					leaveDetails.setNoOfEarnLeave(leaveDetailsReq.getLeaveDetails().getNoOfEarnLeave());
+					leaveCountDetails = leaveDtl.get();
+					leaveCountDetails.setNoOfCasualLeave(leaveDetailsReq.getLeaveDetails().getNoOfCasualLeave());
+					leaveCountDetails.setNoOfSickLeave(leaveDetailsReq.getLeaveDetails().getNoOfSickLeave());
+					leaveCountDetails.setNoOfEarnLeave(leaveDetailsReq.getLeaveDetails().getNoOfEarnLeave());
 					
-					leaveDetails.setRemainingCasualLeave(leaveDetailsReq.getLeaveDetails().getRemainingCasualLeave());
-					leaveDetails.setRemainingSickLeave(leaveDetailsReq.getLeaveDetails().getRemainingSickLeave());
-					leaveDetails.setRemainingEarnLeave(leaveDetailsReq.getLeaveDetails().getRemainingEarnLeave());
+					leaveCountDetails.setRemainingCasualLeave(leaveDetailsReq.getLeaveDetails().getRemainingCasualLeave());
+					leaveCountDetails.setRemainingSickLeave(leaveDetailsReq.getLeaveDetails().getRemainingSickLeave());
+					leaveCountDetails.setRemainingEarnLeave(leaveDetailsReq.getLeaveDetails().getRemainingEarnLeave());
 					
-					leaveDetails.setTotalLOP(leaveDetailsReq.getLeaveDetails().getTotalLOP());
+					leaveCountDetails.setTotalLOP(leaveDetailsReq.getLeaveDetails().getTotalLOP());
 					
-					leaveDetailsRepo.save(leaveDetails);
+					leaveCountDetailsRepo.save(leaveCountDetails);
 				}
 				else {
 					return new ResponseEntity<Message>(new Message("No leave Details found for this employee. "
@@ -151,8 +151,8 @@ public class LeaveServiceImpl implements ILeaveService {
 				return new ResponseEntity<Message>(new Message("Employee id is required to update leave details"), HttpStatus.BAD_REQUEST);
 			}
 		}catch(IllegalArgumentException ex) {
-			logger.debug("ERROR : On update leave details for object : " + leaveDetails.toString());
-			throw new IllegalArgumentException("ERROR : On update leave details for object : " + leaveDetails.toString());
+			logger.debug("ERROR : On update leave details for object : " + leaveCountDetails.toString());
+			throw new IllegalArgumentException("ERROR : On update leave details for object : " + leaveCountDetails.toString());
 		}catch(Exception ex) {
 			logger.debug("ERROR : On update leave details for employee id : " + leaveDetailsReq.getEmployeeId());
 			logger.debug("ERROR : Error message is : " + ex.getMessage());
@@ -182,9 +182,9 @@ public class LeaveServiceImpl implements ILeaveService {
 			
 			emp = empRepo.findById(Long.parseLong(leaveReq.getEmployeeId()));
 			if(emp.isPresent()) {
-				Optional<LeaveDetails> leaveDetails = leaveDetailsRepo.findByEmployeeId(emp.get().getId());
+				Optional<LeaveCountDetails> leaveCountDetails = leaveCountDetailsRepo.findByEmployeeId(emp.get().getId());
 				
-				if(leaveDetails.isPresent()) {
+				if(leaveCountDetails.isPresent()) {
 					//Leave request FROM date must be less than TO date
 					if(leaveReq.getLeaveRecord().getFromDate().before(leaveReq.getLeaveRecord().getToDate())) {
 						try {
@@ -205,7 +205,7 @@ public class LeaveServiceImpl implements ILeaveService {
 								leaveReq.getLeaveRecord().getLeaveType(),
 								new Date(), null);
 						
-						leaveRecordRepo.save(leaveRecord);
+						leaveRequestRecordRepo.save(leaveRecord);
 						
 					}
 					else {
@@ -236,7 +236,7 @@ public class LeaveServiceImpl implements ILeaveService {
 	
 	@Transactional
 	@Override
-	public ResponseEntity<?> updateLeaveRequest(LeaveRequest leaveRequest) throws Exception{
+	public ResponseEntity<?> updateLeaveRequestRecord(LeaveRequest leaveRequest) throws Exception{
 		LeaveRequestRecord leaveRecord = null;
 		int totalLeaveDays = 0;
 		String loggedInUSerEmail = Helper.loggedInUserEmailId();
@@ -251,7 +251,7 @@ public class LeaveServiceImpl implements ILeaveService {
 				emp = empRepo.findByEmail(loggedInUSerEmail);
 			}
 			
-			Optional<LeaveRequestRecord> levRd = leaveRecordRepo.findByIdAndEmployeeId(leaveRequest.getLeaveRecord().getId(), emp.get().getId());
+			Optional<LeaveRequestRecord> levRd = leaveRequestRecordRepo.findByIdAndEmployeeId(leaveRequest.getLeaveRecord().getId(), emp.get().getId());
 			if(levRd.isPresent()) {
 				if(!levRd.get().getStatus().value.equals(LeaveStatus.ACCEPTED.value) ||
 						!levRd.get().getStatus().value.equals(LeaveStatus.REJECTED.value)) {
@@ -273,7 +273,7 @@ public class LeaveServiceImpl implements ILeaveService {
 						leaveRecord.setLeaveType(leaveRequest.getLeaveRecord().getLeaveType());
 						leaveRecord.setTotalLeaveDays(totalLeaveDays);
 						
-						leaveRecordRepo.save(leaveRecord);
+						leaveRequestRecordRepo.save(leaveRecord);
 						
 					}
 					else {
@@ -317,7 +317,7 @@ public class LeaveServiceImpl implements ILeaveService {
 				if(employeeIds.isPresent() && employeeIds.get().size() > 0) {
 					if(leaveType == null && leaveStatus == null) {
 						
-						leaveRecords = leaveRecordRepo.findAllByEmployeeIdIn(employeeIds.get());
+						leaveRecords = leaveRequestRecordRepo.findAllByEmployeeIdIn(employeeIds.get());
 					}
 					else {
 						leaveRecords = getLeaveRecordByLeaveTypeAndLeaveStatus(leaveType, leaveStatus, employeeIds.get());
@@ -352,7 +352,7 @@ public class LeaveServiceImpl implements ILeaveService {
 						
 						if(employeeIds.size() > 0) {
 							if(leaveType == null && leaveStatus == null) {
-								leaveRecords = leaveRecordRepo.findAllByEmployeeIdIn(employeeIds);
+								leaveRecords = leaveRequestRecordRepo.findAllByEmployeeIdIn(employeeIds);
 							}
 							else {
 								leaveRecords = getLeaveRecordByLeaveTypeAndLeaveStatus(leaveType, leaveStatus, employeeIds);
@@ -374,7 +374,7 @@ public class LeaveServiceImpl implements ILeaveService {
 			//Get all the leave record for all employees 
 			else {
 				if(leaveType == null && leaveStatus == null) {
-					List<LeaveRequestRecord> leaveRecordOfAllEmp = leaveRecordRepo.findAll();
+					List<LeaveRequestRecord> leaveRecordOfAllEmp = leaveRequestRecordRepo.findAll();
 					if(leaveRecordOfAllEmp.size() > 0) {
 						leaveRecords = Optional.of(leaveRecordOfAllEmp);
 					}
@@ -411,7 +411,7 @@ public class LeaveServiceImpl implements ILeaveService {
 				empIds.add(employee.get().getId());
 				
 				if(leaveType == null && leaveStatus == null) {
-					leaveRecords = leaveRecordRepo.findAllByEmployeeIdIn(empIds);
+					leaveRecords = leaveRequestRecordRepo.findAllByEmployeeIdIn(empIds);
 				}
 				else {
 					leaveRecords = getLeaveRecordByLeaveTypeAndLeaveStatus(leaveType, leaveStatus, empIds);
@@ -439,28 +439,28 @@ public class LeaveServiceImpl implements ILeaveService {
 		try {
 			if(leaveType != null && leaveStatus == null) {
 				if(empIds != null) {
-					leaveRecords = leaveRecordRepo.findByLeaveTypeAndEmployeeIdIn(leaveType, empIds);
+					leaveRecords = leaveRequestRecordRepo.findByLeaveTypeAndEmployeeIdIn(leaveType, empIds);
 				}
 				else {
-					leaveRecords = leaveRecordRepo.findByLeaveType(leaveType);
+					leaveRecords = leaveRequestRecordRepo.findByLeaveType(leaveType);
 				}
 				
 			}
 			else if (leaveType == null && leaveStatus != null) {
 				if(empIds != null) {
-					leaveRecords = leaveRecordRepo.findByLeaveStatusAndEmployeeIdIn(leaveStatus, empIds);
+					leaveRecords = leaveRequestRecordRepo.findByLeaveStatusAndEmployeeIdIn(leaveStatus, empIds);
 				}
 				else {
-					leaveRecords = leaveRecordRepo.findByLeaveStatus(leaveStatus);
+					leaveRecords = leaveRequestRecordRepo.findByLeaveStatus(leaveStatus);
 				}
 				
 			}
 			else if(leaveType != null && leaveStatus != null) {
 				if(empIds != null) {
-					leaveRecords = leaveRecordRepo.findByLeaveTypeAndLeaveStatusAndEmployeeIdIn(leaveType, leaveStatus, empIds);
+					leaveRecords = leaveRequestRecordRepo.findByLeaveTypeAndLeaveStatusAndEmployeeIdIn(leaveType, leaveStatus, empIds);
 				}
 				else {
-					leaveRecords = leaveRecordRepo.findByLeaveTypeAndLeaveStatus(leaveType, leaveStatus);
+					leaveRecords = leaveRequestRecordRepo.findByLeaveTypeAndLeaveStatus(leaveType, leaveStatus);
 				}
 				
 			}
@@ -471,5 +471,85 @@ public class LeaveServiceImpl implements ILeaveService {
 		}
 		
 		return leaveRecords;
+	}
+	
+	
+	@Override
+	public ResponseEntity<?> getLeaveRequestRecordById(String id) throws Exception{
+		String loggedInUSerEmail = Helper.loggedInUserEmailId();
+		String authority = Helper.loggedInUserAuthority();
+		Optional<LeaveRequestRecord> leaveReqRecord = Optional.empty();
+		
+		try {
+			//Get the loggedin employee details
+			Optional<Employee> employee = empRepo.findByEmail(loggedInUSerEmail);
+			if(employee.isPresent()) {
+				//Get the leave request record by id
+				leaveReqRecord = leaveRequestRecordRepo.findById(Integer.parseInt(id));
+				if(leaveReqRecord.isPresent()) {
+					Long leaveRequestedEmployeeId = leaveReqRecord.get().getEmployee().getId();
+					if(authority.equals(Roles.ROLE_USER.name())) {
+						//If login user's role is USER then check employee id from 
+						//leaveRequestRecord is equal to logged in employee id
+						if(leaveRequestedEmployeeId != employee.get().getId()) {
+							return new ResponseEntity<Message>(new Message("You don't have permission to view this user's leave request details."), HttpStatus.FORBIDDEN);
+						}
+					}
+					else if(authority.equals(Roles.ROLE_MANAGER.name())) {
+						//If login user's role is MANAGER then check employee id from 
+						//leaveRequestRecord is equal to logged in employee id
+						if(leaveRequestedEmployeeId != employee.get().getId()) {
+							//If leave Request is not managers leave then fetch user with id from leave request
+							Optional<Employee> employee1 = empRepo.findById(leaveRequestedEmployeeId);
+							if(employee1.isPresent()) {
+								//Check user is reporting to logged in users or not
+								if(!employee1.get().getManagerEmail().equals(loggedInUSerEmail)) {
+									return new ResponseEntity<Message>(new Message("You don't have permission to view this user's leave request details."), HttpStatus.FORBIDDEN);
+								}
+							}
+							else {
+								return new ResponseEntity<Message>(new Message("No employee found for id : " + leaveRequestedEmployeeId), HttpStatus.NOT_FOUND);
+							}
+						}
+					}
+					else if(authority.equals(Roles.ROLE_HR.name())) {
+						//If login user's role is HR then check employee id from 
+						//leaveRequestRecord is equal to logged in employee id
+						if(leaveRequestedEmployeeId != employee.get().getId()) {
+							//If leave Request is not HR's leave then fetch user with id from leave request
+							Optional<Employee> employee1 = empRepo.findById(leaveRequestedEmployeeId);
+							if(employee1.isPresent()) {
+								//Check user is reporting to logged in users or not
+								if(!employee1.get().getManagerEmail().equals(loggedInUSerEmail)) {
+									//Assuming the leave request is for role user. So fetching managers details who may report to HR
+									Optional<Employee> employee2 = empRepo.findByEmail(employee.get().getManagerEmail());
+									if(employee2.isPresent()) {
+										//Check user is reporting to logged in users or not
+										if(!employee1.get().getManagerEmail().equals(loggedInUSerEmail)) {
+											return new ResponseEntity<Message>(new Message("You don't have permission to view this user's leave request details."), HttpStatus.FORBIDDEN);
+										}
+									}
+								}
+							}
+
+						}
+											
+					}
+				}
+				else {
+					return new ResponseEntity<Message>(new Message("No Leave request record found for id : " + id), HttpStatus.NOT_FOUND);
+				}
+			}
+			else {
+				return new ResponseEntity<Message>(new Message("No employee found for email : " + loggedInUSerEmail), HttpStatus.NOT_FOUND);
+			}
+
+		}catch(Exception ex) {
+			logger.debug("ERROR : On fetch leave request record from method getLeaveRequestRecordById");
+			logger.debug("ERROR : Error message is : " + ex.getMessage());
+			throw new Exception("ERROR : On fetch leave request record from method getLeaveRequestRecordById", ex);
+		}
+		
+		return new ResponseEntity<LeaveRequestRecord>(leaveReqRecord.get(), HttpStatus.OK);
 	}
 }

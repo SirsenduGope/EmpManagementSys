@@ -198,13 +198,14 @@ public class EmployeeServiceImpl implements IEmployeeService{
 			
 			try {
 				newEmployee = empRepo.saveAndFlush(newEmployee);
-				ResponseEntity<?> response = leaveService.generateLeaveDetailsForEmployee(newEmployee);
 				
+				ResponseEntity<?> response = leaveService.generateLeaveCountDetailsForEmployee(newEmployee);
 				if(response.getStatusCodeValue() < 200 || response.getStatusCodeValue() > 299) {
 					logger.debug("ERROR : Error occored on setting leave details for employee : " + newEmployee.toString());
 					logger.debug("ERROR : " + response.getBody().toString());
 					throw new Exception("ERROR : Error occored on setting leave details for employee : " + newEmployee.toString());
 				}
+				
 			}catch(IllegalArgumentException ex) {
 				logger.debug("ERROR : On create a new employee with object : " + newEmployee.toString());
 				logger.debug("ERROR : Error message is : " + ex.getMessage());

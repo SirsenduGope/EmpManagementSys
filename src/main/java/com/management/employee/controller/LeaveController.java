@@ -2,6 +2,7 @@ package com.management.employee.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -34,6 +35,13 @@ public class LeaveController {
 		return leaveService.getAllMyLeaves(leaveType, leaveStatus);
 	}
 	
+	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER') || hasRole('USER')")
+	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
+	public ResponseEntity<?> getLeaveRequestRecordById(@PathVariable("id") String id) throws Exception{
+
+		return leaveService.getLeaveRequestRecordById(id);
+	}
+	
 	
 	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER')")
 	@RequestMapping(value = "/list", method = RequestMethod.GET)
@@ -55,9 +63,9 @@ public class LeaveController {
 	
 	@PreAuthorize("hasRole('ADMIN') || hasRole('HR')")
 	@RequestMapping(value = "/details", method = RequestMethod.PUT)
-	public ResponseEntity<?> updateLeaveDetailsByEmployeeId(@RequestBody LeaveDetailsRequest leaveDetailsReq) throws Exception{
+	public ResponseEntity<?> updateLeaveCountDetailsByEmployeeId(@RequestBody LeaveDetailsRequest leaveDetailsReq) throws Exception{
 
-		return leaveService.updateLeaveDetailsForEmployee(leaveDetailsReq);
+		return leaveService.updateLeaveCountDetailsForEmployee(leaveDetailsReq);
 	}
 	
 	
@@ -65,7 +73,7 @@ public class LeaveController {
 	@RequestMapping(value = "/edit", method = RequestMethod.PUT)
 	public ResponseEntity<?> updateLeaveRequest(@RequestBody LeaveRequest leaveRequest) throws Exception{
 
-		return leaveService.updateLeaveRequest(leaveRequest);
+		return leaveService.updateLeaveRequestRecord(leaveRequest);
 	}
 	
 	

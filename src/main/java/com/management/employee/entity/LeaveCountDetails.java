@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @Table(name = "leave_details")
 @SQLDelete(sql = "UPDATE leave_details SET deleted = true WHERE id=?")
 @Where(clause = "deleted = false")
-public class LeaveDetails extends Auditable<String> implements Serializable {
+public class LeaveCountDetails extends Auditable<String> implements Serializable {
 	
 	private static final long serialVersionUID = 953578744714667214L;
 
@@ -68,11 +68,11 @@ public class LeaveDetails extends Auditable<String> implements Serializable {
 	@Column(name = "deleted", columnDefinition = "bit(1) default b'0'")
 	private boolean deleted = Boolean.FALSE;
 
-	public LeaveDetails() {
+	public LeaveCountDetails() {
 		super();
 	}
 
-	public LeaveDetails(Employee employee, Double noOfCasualLeave, Double remainingCasualLeave, Double noOfSickLeave,
+	public LeaveCountDetails(Employee employee, Double noOfCasualLeave, Double remainingCasualLeave, Double noOfSickLeave,
 			Double remainingSickLeave, Double noOfEarnLeave, Double remainingEarnLeave, Double totalLeaves,
 			Double remainingLeaves, Integer totalLOP) {
 		super();

@@ -63,7 +63,7 @@ public class Employee extends Auditable<String> implements Serializable {
 	private List<LeaveRequestRecord> leaveRecord;
 	
 	@OneToOne(mappedBy = "employee")
-	private LeaveDetails leaveDetails;
+	private LeaveCountDetails leaveDetails;
 	
 	@JsonIgnore
 	@Column(name = "deleted", columnDefinition = "bit(1) default b'0'")
