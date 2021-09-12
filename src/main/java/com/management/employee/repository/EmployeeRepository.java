@@ -20,6 +20,10 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long>{
 	@Query(value = "select * from employees e where e.report_to = ?1 and e.deleted = 0", nativeQuery = true)
 	Optional<List<Employee>> findByReportTo(String email);
 	
-	@Query(value = "select * from employees e where e.id in (select employee_id from employee_roles where role_id = ?1)", nativeQuery = true)
+	@Query(value = "select * from employees e where e.id in "
+			+ "(select employee_id from employee_roles where role_id = ?1)", nativeQuery = true)
 	Optional<List<Employee>> findByRoleId(Integer id);
+	
+	@Query(value = "select id from employees e where e.report_to = ?1 and e.deleted = 0", nativeQuery = true)
+	Optional<List<Long>> findAllEmployeeIdByReportTo(String email);
 }

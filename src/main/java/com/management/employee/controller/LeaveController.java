@@ -5,6 +5,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.management.employee.entity.LeaveSettings;
@@ -24,12 +25,33 @@ public class LeaveController {
 	}
 	
 	
-	@PreAuthorize("hasRole('ADMIN')")
-	@RequestMapping(value = "/settings", method = RequestMethod.POST)
-	public ResponseEntity<?> leaveSettings(@RequestBody LeaveSettings leaveSettings) throws Exception{
+	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER') || hasRole('USER')")
+	@RequestMapping(value = "/", method = RequestMethod.GET)
+	public ResponseEntity<?> getAllMyLeaveRequestRecord(
+			@RequestParam(value = "leaveType", required = false) String leaveType,
+			@RequestParam(value = "leaveStaus", required = false) String leaveStatus) throws Exception{
 
-		return leaveService.configureLeaveSettings(leaveSettings);
+		return leaveService.getAllMyLeaves(leaveType, leaveStatus);
 	}
+	
+	
+	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER')")
+	@RequestMapping(value = "/list", method = RequestMethod.GET)
+	public ResponseEntity<?> getAllLeaveRequestRecord(
+			@RequestParam(value = "leaveType", required = false) String leaveType,
+			@RequestParam(value = "leaveStaus", required = false) String leaveStatus) throws Exception{
+
+		return leaveService.getAllRequetedLeaves(leaveType, leaveStatus);
+	}
+	
+	
+	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER') || hasRole('USER')")
+	@RequestMapping(value = "/apply", method = RequestMethod.POST)
+	public ResponseEntity<?> requestForLeave(@RequestBody LeaveRequest leaveRequest) throws Exception{
+
+		return leaveService.requestForLeave(leaveRequest);
+	}
+	
 	
 	@PreAuthorize("hasRole('ADMIN') || hasRole('HR')")
 	@RequestMapping(value = "/details", method = RequestMethod.PUT)
@@ -38,12 +60,22 @@ public class LeaveController {
 		return leaveService.updateLeaveDetailsForEmployee(leaveDetailsReq);
 	}
 	
+	
 	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER') || hasRole('USER')")
-	@RequestMapping(value = "/details", method = RequestMethod.POST)
-	public ResponseEntity<?> requestForLeave(@RequestBody LeaveRequest leaveRequest) throws Exception{
+	@RequestMapping(value = "/edit", method = RequestMethod.PUT)
+	public ResponseEntity<?> updateLeaveRequest(@RequestBody LeaveRequest leaveRequest) throws Exception{
 
-		return leaveService.requestForLeave(leaveRequest);
+		return leaveService.updateLeaveRequest(leaveRequest);
 	}
+	
+	
+	@PreAuthorize("hasRole('ADMIN')")
+	@RequestMapping(value = "/settings", method = RequestMethod.POST)
+	public ResponseEntity<?> leaveSettings(@RequestBody LeaveSettings leaveSettings) throws Exception{
+
+		return leaveService.configureLeaveSettings(leaveSettings);
+	}
+	
 	
 	
 //	@PreAuthorize("hasRole('HR') or hasRole('ADMIN')")

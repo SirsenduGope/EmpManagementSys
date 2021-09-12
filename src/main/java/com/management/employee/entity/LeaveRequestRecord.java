@@ -23,10 +23,10 @@ import com.management.employee.enums.LeaveStatus;
 import com.management.employee.enums.LeaveType;
 
 @Entity
-@Table(name = "leave_record")
-@SQLDelete(sql = "UPDATE leave_record SET deleted = true WHERE id=?")
+@Table(name = "leave_request_record")
+@SQLDelete(sql = "UPDATE leave_request_record SET deleted = true WHERE id=?")
 @Where(clause = "deleted = false")
-public class LeaveRecord extends Auditable<String> implements Serializable {
+public class LeaveRequestRecord extends Auditable<String> implements Serializable {
 	
 	private static final long serialVersionUID = -1041378941673679898L;
 
@@ -68,11 +68,11 @@ public class LeaveRecord extends Auditable<String> implements Serializable {
 	@Column(name = "deleted", columnDefinition = "bit(1) default b'0'")
 	private boolean deleted = Boolean.FALSE;
 
-	public LeaveRecord() {
+	public LeaveRequestRecord() {
 		super();
 	}
 
-	public LeaveRecord(Date fromDate, Date toDate, String leaveReason, LeaveStatus status) {
+	public LeaveRequestRecord(Date fromDate, Date toDate, String leaveReason, LeaveStatus status) {
 		super();
 		this.fromDate = fromDate;
 		this.toDate = toDate;
@@ -80,7 +80,7 @@ public class LeaveRecord extends Auditable<String> implements Serializable {
 		this.status = status;
 	}
 	
-	public LeaveRecord(Employee employee, Date fromDate, Date toDate, String leaveReason,
+	public LeaveRequestRecord(Employee employee, Date fromDate, Date toDate, String leaveReason,
 			Integer totalLeaveDays, LeaveStatus status, LeaveType leaveType, Date requestDate, 
 			Date responseDate) {
 		super();

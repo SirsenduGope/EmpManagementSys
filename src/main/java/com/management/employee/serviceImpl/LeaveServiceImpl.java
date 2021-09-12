@@ -2,6 +2,7 @@ package com.management.employee.serviceImpl;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -16,29 +17,31 @@ import org.springframework.stereotype.Service;
 
 import com.management.employee.entity.Employee;
 import com.management.employee.entity.LeaveDetails;
-import com.management.employee.entity.LeaveRecord;
+import com.management.employee.entity.LeaveRequestRecord;
 import com.management.employee.entity.LeaveSettings;
 import com.management.employee.enums.LeaveStatus;
+import com.management.employee.enums.Roles;
 import com.management.employee.payload.LeaveDetailsRequest;
 import com.management.employee.payload.LeaveRequest;
 import com.management.employee.payload.Message;
 import com.management.employee.repository.EmployeeRepository;
 import com.management.employee.repository.LeaveDetailsRepository;
-import com.management.employee.repository.LeaveRecordRepository;
+import com.management.employee.repository.LeaveRequestRecordRepository;
 import com.management.employee.repository.LeaveSettingsRepository;
 import com.management.employee.service.ILeaveService;
+import com.management.employee.utils.Helper;
 
 @Service
 public class LeaveServiceImpl implements ILeaveService {
 	
 	private LeaveSettingsRepository leaveSettingsRepo;
 	private LeaveDetailsRepository leaveDetailsRepo;
-	private LeaveRecordRepository leaveRecordRepo;
+	private LeaveRequestRecordRepository leaveRecordRepo;
 	private EmployeeRepository empRepo;
 	
 	public LeaveServiceImpl(final LeaveSettingsRepository leaveSettingsRepo,
 			final LeaveDetailsRepository leaveDetailsRepo,
-			final LeaveRecordRepository leaveRecordRepo,
+			final LeaveRequestRecordRepository leaveRecordRepo,
 			final EmployeeRepository empRepo) {
 		this.leaveSettingsRepo = leaveSettingsRepo;
 		this.leaveDetailsRepo = leaveDetailsRepo;
@@ -163,56 +166,61 @@ public class LeaveServiceImpl implements ILeaveService {
 	@Transactional
 	@Override
 	public ResponseEntity<?> requestForLeave(LeaveRequest leaveReq) throws Exception{
-		LeaveRecord leaveRecord = null;
+		LeaveRequestRecord leaveRecord = null;
 		int totalLeaveDays = 0;
+		String loggedInUSerEmail = Helper.loggedInUserEmailId();
+		Optional<Employee> emp = Optional.empty();
 		SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+		
 		try {
 			if(leaveReq.getEmployeeId() != null) {
-				Optional<Employee> emp = empRepo.findById(Long.parseLong(leaveReq.getEmployeeId()));
-				if(emp.isPresent()) {
-					Optional<LeaveDetails> leaveDetails = leaveDetailsRepo.findByEmployeeId(emp.get().getId());
-					
-					if(leaveDetails.isPresent()) {
-						//Leave request FROM date must be less than TO date
-						if(leaveReq.getLeaveRecord().getFromDate().before(leaveReq.getLeaveRecord().getToDate())) {
-							try {
-								Date fromDate = sdf.parse(leaveReq.getLeaveRecord().getFromDate().toString());
-								Date toDate = sdf.parse(leaveReq.getLeaveRecord().getToDate().toString());
-								totalLeaveDays = (int) ((Math.abs(toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) % 365);
-							}catch (ParseException ex) {
-								logger.debug("ERROR : Parse exception from requestForLeave method : " + ex.getMessage());
-					            ex.printStackTrace();
-					        }
-							
-							leaveRecord = new LeaveRecord(emp.get(), 
-									leaveReq.getLeaveRecord().getFromDate(),
-									leaveReq.getLeaveRecord().getToDate(),
-									leaveReq.getLeaveRecord().getLeaveReason(),
-									totalLeaveDays,
-									LeaveStatus.REQUESTED,
-									leaveReq.getLeaveRecord().getLeaveType(),
-									new Date(), null);
-							
-							leaveRecordRepo.save(leaveRecord);
-							
-						}
-						else {
-							return new ResponseEntity<Message>(new Message("Leave FROM date must be less than TO date"), HttpStatus.BAD_REQUEST);
-						}
+				emp = empRepo.findById(Long.parseLong(leaveReq.getEmployeeId()));
+			}
+			else {
+				emp = empRepo.findByEmail(loggedInUSerEmail);
+			}
+			
+			emp = empRepo.findById(Long.parseLong(leaveReq.getEmployeeId()));
+			if(emp.isPresent()) {
+				Optional<LeaveDetails> leaveDetails = leaveDetailsRepo.findByEmployeeId(emp.get().getId());
+				
+				if(leaveDetails.isPresent()) {
+					//Leave request FROM date must be less than TO date
+					if(leaveReq.getLeaveRecord().getFromDate().before(leaveReq.getLeaveRecord().getToDate())) {
+						try {
+							Date fromDate = sdf.parse(leaveReq.getLeaveRecord().getFromDate().toString());
+							Date toDate = sdf.parse(leaveReq.getLeaveRecord().getToDate().toString());
+							totalLeaveDays = (int) ((Math.abs(toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) % 365);
+						}catch (ParseException ex) {
+							logger.debug("ERROR : Parse exception from requestForLeave method : " + ex.getMessage());
+				            ex.printStackTrace();
+				        }
+						
+						leaveRecord = new LeaveRequestRecord(emp.get(), 
+								leaveReq.getLeaveRecord().getFromDate(),
+								leaveReq.getLeaveRecord().getToDate(),
+								leaveReq.getLeaveRecord().getLeaveReason(),
+								totalLeaveDays,
+								LeaveStatus.REQUESTED,
+								leaveReq.getLeaveRecord().getLeaveType(),
+								new Date(), null);
+						
+						leaveRecordRepo.save(leaveRecord);
+						
 					}
 					else {
-						return new ResponseEntity<Message>(new Message("No leave Details found for this employee. "
-								+ "Please create leave details for employee : " + emp.get().getEmail()), HttpStatus.NOT_FOUND);
+						return new ResponseEntity<Message>(new Message("Leave FROM date must be less than TO date"), HttpStatus.BAD_REQUEST);
 					}
 				}
 				else {
-					return new ResponseEntity<Message>(new Message("No employee found for id : " + leaveReq.getEmployeeId()), HttpStatus.NOT_FOUND);
+					return new ResponseEntity<Message>(new Message("No leave Details found for this employee. "
+							+ "Please create leave details for employee : " + emp.get().getEmail()), HttpStatus.NOT_FOUND);
 				}
-				
 			}
 			else {
-				return new ResponseEntity<Message>(new Message("Employee id is required to request for leave"), HttpStatus.BAD_REQUEST);
+				return new ResponseEntity<Message>(new Message("No employee found for id : " + leaveReq.getEmployeeId()), HttpStatus.NOT_FOUND);
 			}
+				
 		}catch(IllegalArgumentException ex) {
 			logger.debug("ERROR : On save leave record for object : " + leaveRecord.toString());
 			throw new IllegalArgumentException("ERROR : On save leave record for object : " + leaveRecord.toString());
@@ -223,5 +231,245 @@ public class LeaveServiceImpl implements ILeaveService {
 		}
 		
 		return new ResponseEntity<Message>(new Message("Leave record added successfully with object : " + leaveRecord.toString()), HttpStatus.CREATED);
+	}
+	
+	
+	@Transactional
+	@Override
+	public ResponseEntity<?> updateLeaveRequest(LeaveRequest leaveRequest) throws Exception{
+		LeaveRequestRecord leaveRecord = null;
+		int totalLeaveDays = 0;
+		String loggedInUSerEmail = Helper.loggedInUserEmailId();
+		Optional<Employee> emp = Optional.empty();
+		SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+		
+		try {
+			if(leaveRequest.getEmployeeId() != null) {
+				emp = empRepo.findById(Long.parseLong(leaveRequest.getEmployeeId()));
+			}
+			else {
+				emp = empRepo.findByEmail(loggedInUSerEmail);
+			}
+			
+			Optional<LeaveRequestRecord> levRd = leaveRecordRepo.findByIdAndEmployeeId(leaveRequest.getLeaveRecord().getId(), emp.get().getId());
+			if(levRd.isPresent()) {
+				if(!levRd.get().getStatus().value.equals(LeaveStatus.ACCEPTED.value) ||
+						!levRd.get().getStatus().value.equals(LeaveStatus.REJECTED.value)) {
+					
+					if(leaveRequest.getLeaveRecord().getFromDate().before(leaveRequest.getLeaveRecord().getToDate())) {
+						try {
+							Date fromDate = sdf.parse(leaveRequest.getLeaveRecord().getFromDate().toString());
+							Date toDate = sdf.parse(leaveRequest.getLeaveRecord().getToDate().toString());
+							totalLeaveDays = (int) ((Math.abs(toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) % 365);
+						}catch (ParseException ex) {
+							logger.debug("ERROR : Parse exception from requestForLeave method : " + ex.getMessage());
+				            ex.printStackTrace();
+				        }
+						
+						leaveRecord = levRd.get();
+						leaveRecord.setFromDate(leaveRequest.getLeaveRecord().getFromDate());
+						leaveRecord.setToDate(leaveRequest.getLeaveRecord().getToDate());
+						leaveRecord.setLeaveReason(leaveRequest.getLeaveRecord().getLeaveReason());
+						leaveRecord.setLeaveType(leaveRequest.getLeaveRecord().getLeaveType());
+						leaveRecord.setTotalLeaveDays(totalLeaveDays);
+						
+						leaveRecordRepo.save(leaveRecord);
+						
+					}
+					else {
+						return new ResponseEntity<Message>(new Message("Leave FROM date must be less than TO date"), HttpStatus.BAD_REQUEST);
+					}
+					
+				}
+				else {
+					return new ResponseEntity<Message>(new Message("This leave already either ACCEPTED or REJECTED. "
+							+ "Can't edit this leave. Please apply a new leave if required"), HttpStatus.FORBIDDEN);
+				}
+			}
+			else {
+				return new ResponseEntity<Message>(new Message("No leave record found for id : " + leaveRequest.getLeaveRecord().getId()), HttpStatus.NOT_FOUND);
+			}
+			
+		}catch(IllegalArgumentException ex) {
+			logger.debug("ERROR : On update leave record for object : " + leaveRecord.toString());
+			throw new IllegalArgumentException("ERROR : On update leave record for object : " + leaveRecord.toString());
+		}catch(Exception ex) {
+			logger.debug("ERROR : On update leave record for object : " + leaveRecord.toString());
+			logger.debug("ERROR : Error message is : " + ex.getMessage());
+			throw new Exception("On update leave record for object : " + leaveRecord.toString());
+		}
+		
+		return new ResponseEntity<Message>(new Message("Leave record updated successfully with object : " + leaveRecord.toString()), HttpStatus.OK);
+	}
+	
+	
+	@Override
+	public ResponseEntity<?> getAllRequetedLeaves(String leaveType, String leaveStatus) throws Exception{
+		String loggedInUSerEmail = Helper.loggedInUserEmailId();
+		String authority = Helper.loggedInUserAuthority();
+		Optional<List<LeaveRequestRecord>> leaveRecords = Optional.empty();
+		
+		try{
+			//Get all the leave record for all employees under a manager
+			if(authority.equals(Roles.ROLE_MANAGER.name())) {
+
+				Optional<List<Long>> employeeIds = empRepo.findAllEmployeeIdByReportTo(loggedInUSerEmail);
+				if(employeeIds.isPresent() && employeeIds.get().size() > 0) {
+					if(leaveType == null && leaveStatus == null) {
+						
+						leaveRecords = leaveRecordRepo.findAllByEmployeeIdIn(employeeIds.get());
+					}
+					else {
+						leaveRecords = getLeaveRecordByLeaveTypeAndLeaveStatus(leaveType, leaveStatus, employeeIds.get());
+					}
+					
+					if(leaveRecords.isEmpty() || leaveRecords.get().size() == 0) {
+						return new ResponseEntity<Message>(new Message("No leave record found"), HttpStatus.NOT_FOUND);
+					}
+				}
+				else {
+					return new ResponseEntity<Message>(new Message("No employee found under : " + loggedInUSerEmail), HttpStatus.NOT_FOUND);
+				}
+			}
+			//Get all the leave record for all employees under a HR
+			else if(authority.equals(Roles.ROLE_HR.name())) {
+				List<Long> employeeIds = null;
+				
+				//Find Ids of all the managers
+				Optional<List<Long>> managersIds = empRepo.findAllEmployeeIdByReportTo(loggedInUSerEmail);
+				if(managersIds.isPresent() && managersIds.get().size() > 0) {
+					employeeIds.addAll(managersIds.get());
+					
+					//Find all the managers under HR
+					List<Employee> managers = empRepo.findAllById(managersIds.get());
+					if(managers.size() > 0) {
+						for(Employee manager : managers) {
+							Optional<List<Long>> empIds = empRepo.findAllEmployeeIdByReportTo(manager.getEmail());
+							if(empIds.isPresent() && empIds.get().size() > 0) {
+								employeeIds.addAll(empIds.get());
+							}
+						}
+						
+						if(employeeIds.size() > 0) {
+							if(leaveType == null && leaveStatus == null) {
+								leaveRecords = leaveRecordRepo.findAllByEmployeeIdIn(employeeIds);
+							}
+							else {
+								leaveRecords = getLeaveRecordByLeaveTypeAndLeaveStatus(leaveType, leaveStatus, employeeIds);
+							}
+							
+							if(leaveRecords.isEmpty() || leaveRecords.get().size() == 0) {
+								return new ResponseEntity<Message>(new Message("No leave record found"), HttpStatus.NOT_FOUND);
+							}
+						}
+					}
+					else {
+						return new ResponseEntity<Message>(new Message("No employee found under : " + loggedInUSerEmail), HttpStatus.NOT_FOUND);
+					}
+				}
+				else {
+					return new ResponseEntity<Message>(new Message("No employee found under : " + loggedInUSerEmail), HttpStatus.NOT_FOUND);
+				}
+			}
+			//Get all the leave record for all employees 
+			else {
+				if(leaveType == null && leaveStatus == null) {
+					List<LeaveRequestRecord> leaveRecordOfAllEmp = leaveRecordRepo.findAll();
+					if(leaveRecordOfAllEmp.size() > 0) {
+						leaveRecords = Optional.of(leaveRecordOfAllEmp);
+					}
+				}
+				else {
+					leaveRecords = getLeaveRecordByLeaveTypeAndLeaveStatus(leaveType, leaveStatus, null);
+				}
+				
+				if(leaveRecords.isEmpty() || leaveRecords.get().size() == 0) {
+					return new ResponseEntity<Message>(new Message("No leave record found"), HttpStatus.NOT_FOUND);
+				}
+				
+			}
+		}catch(Exception ex) {
+			logger.debug("ERROR : On fetch leave record from method getAllRequetedLeaves");
+			logger.debug("ERROR : Error message is : " + ex.getMessage());
+			throw new Exception("ERROR : On fetch leave record from method getAllRequetedLeaves", ex);
+		}
+		
+		
+		return new ResponseEntity<List<LeaveRequestRecord>>(leaveRecords.get(), HttpStatus.OK);
+	}
+	
+	
+	@Override
+	public ResponseEntity<?> getAllMyLeaves(String leaveType, String leaveStatus) throws Exception{
+		String loggedInUSerEmail = Helper.loggedInUserEmailId();
+		Optional<List<LeaveRequestRecord>> leaveRecords = Optional.empty();
+		
+		try {
+			Optional<Employee> employee = empRepo.findByEmail(loggedInUSerEmail);
+			if(employee.isPresent()) {
+				List<Long> empIds = new ArrayList<Long>();
+				empIds.add(employee.get().getId());
+				
+				if(leaveType == null && leaveStatus == null) {
+					leaveRecords = leaveRecordRepo.findAllByEmployeeIdIn(empIds);
+				}
+				else {
+					leaveRecords = getLeaveRecordByLeaveTypeAndLeaveStatus(leaveType, leaveStatus, empIds);
+				}
+				
+				if(leaveRecords.isEmpty() || leaveRecords.get().size() == 0) {
+					return new ResponseEntity<Message>(new Message("No leave record found"), HttpStatus.NOT_FOUND);
+				}
+			}
+		}catch(Exception ex) {
+			logger.debug("ERROR : On fetch leave record from method getAllMyLeaves");
+			logger.debug("ERROR : Error message is : " + ex.getMessage());
+			throw new Exception("ERROR : On fetch leave record from method getAllMyLeaves", ex);
+		}
+		
+		
+		return new ResponseEntity<List<LeaveRequestRecord>>(leaveRecords.get(), HttpStatus.OK);
+		
+	}
+
+	
+	private Optional<List<LeaveRequestRecord>> getLeaveRecordByLeaveTypeAndLeaveStatus(String leaveType, String leaveStatus, List<Long> empIds) throws Exception{
+		Optional<List<LeaveRequestRecord>> leaveRecords = Optional.empty();
+		
+		try {
+			if(leaveType != null && leaveStatus == null) {
+				if(empIds != null) {
+					leaveRecords = leaveRecordRepo.findByLeaveTypeAndEmployeeIdIn(leaveType, empIds);
+				}
+				else {
+					leaveRecords = leaveRecordRepo.findByLeaveType(leaveType);
+				}
+				
+			}
+			else if (leaveType == null && leaveStatus != null) {
+				if(empIds != null) {
+					leaveRecords = leaveRecordRepo.findByLeaveStatusAndEmployeeIdIn(leaveStatus, empIds);
+				}
+				else {
+					leaveRecords = leaveRecordRepo.findByLeaveStatus(leaveStatus);
+				}
+				
+			}
+			else if(leaveType != null && leaveStatus != null) {
+				if(empIds != null) {
+					leaveRecords = leaveRecordRepo.findByLeaveTypeAndLeaveStatusAndEmployeeIdIn(leaveType, leaveStatus, empIds);
+				}
+				else {
+					leaveRecords = leaveRecordRepo.findByLeaveTypeAndLeaveStatus(leaveType, leaveStatus);
+				}
+				
+			}
+		}catch(Exception ex) {
+			logger.debug("ERROR : On fetch leave record from method getLeaveRecordByLeaveTypeAndLeaveStatus");
+			logger.debug("ERROR : Error message is : " + ex.getMessage());
+			throw new Exception("ERROR : On fetch leave record from method getLeaveRecordByLeaveTypeAndLeaveStatus", ex);
+		}
+		
+		return leaveRecords;
 	}
 }

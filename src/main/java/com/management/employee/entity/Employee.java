@@ -60,7 +60,7 @@ public class Employee extends Auditable<String> implements Serializable {
 	private Set<Role> roles = new HashSet<>();
 	
 	@OneToMany(mappedBy = "employee")
-	private List<LeaveRecord> leaveRecord;
+	private List<LeaveRequestRecord> leaveRecord;
 	
 	@OneToOne(mappedBy = "employee")
 	private LeaveDetails leaveDetails;
