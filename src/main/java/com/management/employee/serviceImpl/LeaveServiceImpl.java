@@ -333,9 +333,9 @@ public class LeaveServiceImpl implements ILeaveService {
 			}
 			//Get all the leave record for all employees under a HR
 			else if(authority.equals(Roles.ROLE_HR.name())) {
-				List<Long> employeeIds = null;
+				List<Long> employeeIds = new ArrayList<Long>();
 				
-				//Find Ids of all the managers
+				//Find Id's of all the managers
 				Optional<List<Long>> managersIds = empRepo.findAllEmployeeIdByReportTo(loggedInUSerEmail);
 				if(managersIds.isPresent() && managersIds.get().size() > 0) {
 					employeeIds.addAll(managersIds.get());
