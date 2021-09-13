@@ -1,7 +1,5 @@
 package com.management.employee.serviceImpl;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -24,10 +22,10 @@ import com.management.employee.enums.Roles;
 import com.management.employee.payload.LeaveDetailsRequest;
 import com.management.employee.payload.LeaveRequest;
 import com.management.employee.payload.Message;
-import com.management.employee.repository.EmployeeRepository;
 import com.management.employee.repository.LeaveCountDetailsRepository;
 import com.management.employee.repository.LeaveRequestRecordRepository;
 import com.management.employee.repository.LeaveSettingsRepository;
+import com.management.employee.service.IEmployeeService;
 import com.management.employee.service.ILeaveService;
 import com.management.employee.utils.Helper;
 
@@ -37,16 +35,17 @@ public class LeaveServiceImpl implements ILeaveService {
 	private LeaveSettingsRepository leaveSettingsRepo;
 	private LeaveCountDetailsRepository leaveCountDetailsRepo;
 	private LeaveRequestRecordRepository leaveRequestRecordRepo;
-	private EmployeeRepository empRepo;
+	
+	private IEmployeeService employeeService;
 	
 	public LeaveServiceImpl(final LeaveSettingsRepository leaveSettingsRepo,
 			final LeaveCountDetailsRepository leaveCountDetailsRepo,
 			final LeaveRequestRecordRepository leaveRequestRecordRepo,
-			final EmployeeRepository empRepo) {
+			final IEmployeeService employeeService) {
 		this.leaveSettingsRepo = leaveSettingsRepo;
 		this.leaveCountDetailsRepo = leaveCountDetailsRepo;
 		this.leaveRequestRecordRepo = leaveRequestRecordRepo;
-		this.empRepo = empRepo;
+		this.employeeService = employeeService;
 	}
 	
 	private static final Logger logger = LoggerFactory.getLogger(LeaveServiceImpl.class);
@@ -168,33 +167,26 @@ public class LeaveServiceImpl implements ILeaveService {
 	public ResponseEntity<?> requestForLeave(LeaveRequest leaveReq) throws Exception{
 		LeaveRequestRecord leaveRecord = null;
 		int totalLeaveDays = 0;
-		String loggedInUSerEmail = Helper.loggedInUserEmailId();
 		Optional<Employee> emp = Optional.empty();
-		SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
 		
 		try {
 			if(leaveReq.getEmployeeId() != null) {
-				emp = empRepo.findById(Long.parseLong(leaveReq.getEmployeeId()));
+				emp = employeeService.getEmployeeById(Long.parseLong(leaveReq.getEmployeeId()));
 			}
 			else {
-				emp = empRepo.findByEmail(loggedInUSerEmail);
+				emp = employeeService.getLoggedInUserDetails();
 			}
 			
-			emp = empRepo.findById(Long.parseLong(leaveReq.getEmployeeId()));
+			emp = employeeService.getEmployeeById(Long.parseLong(leaveReq.getEmployeeId()));
 			if(emp.isPresent()) {
 				Optional<LeaveCountDetails> leaveCountDetails = leaveCountDetailsRepo.findByEmployeeId(emp.get().getId());
 				
 				if(leaveCountDetails.isPresent()) {
 					//Leave request FROM date must be less than TO date
 					if(leaveReq.getLeaveRecord().getFromDate().before(leaveReq.getLeaveRecord().getToDate())) {
-						try {
-							Date fromDate = sdf.parse(leaveReq.getLeaveRecord().getFromDate().toString());
-							Date toDate = sdf.parse(leaveReq.getLeaveRecord().getToDate().toString());
-							totalLeaveDays = (int) ((Math.abs(toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) % 365);
-						}catch (ParseException ex) {
-							logger.debug("ERROR : Parse exception from requestForLeave method : " + ex.getMessage());
-				            ex.printStackTrace();
-				        }
+						totalLeaveDays = Helper.getTotalLeavesByCalculatingFromDateToDate(
+								leaveReq.getLeaveRecord().getFromDate(), 
+								leaveReq.getLeaveRecord().getToDate());
 						
 						leaveRecord = new LeaveRequestRecord(emp.get(), 
 								leaveReq.getLeaveRecord().getFromDate(),
@@ -239,16 +231,14 @@ public class LeaveServiceImpl implements ILeaveService {
 	public ResponseEntity<?> updateLeaveRequestRecord(LeaveRequest leaveRequest) throws Exception{
 		LeaveRequestRecord leaveRecord = null;
 		int totalLeaveDays = 0;
-		String loggedInUSerEmail = Helper.loggedInUserEmailId();
 		Optional<Employee> emp = Optional.empty();
-		SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
 		
 		try {
 			if(leaveRequest.getEmployeeId() != null) {
-				emp = empRepo.findById(Long.parseLong(leaveRequest.getEmployeeId()));
+				emp = employeeService.getEmployeeById(Long.parseLong(leaveRequest.getEmployeeId()));
 			}
 			else {
-				emp = empRepo.findByEmail(loggedInUSerEmail);
+				emp = employeeService.getLoggedInUserDetails();
 			}
 			
 			Optional<LeaveRequestRecord> levRd = leaveRequestRecordRepo.findByIdAndEmployeeId(leaveRequest.getLeaveRecord().getId(), emp.get().getId());
@@ -257,14 +247,9 @@ public class LeaveServiceImpl implements ILeaveService {
 						!levRd.get().getStatus().value.equals(LeaveStatus.REJECTED.value)) {
 					
 					if(leaveRequest.getLeaveRecord().getFromDate().before(leaveRequest.getLeaveRecord().getToDate())) {
-						try {
-							Date fromDate = sdf.parse(leaveRequest.getLeaveRecord().getFromDate().toString());
-							Date toDate = sdf.parse(leaveRequest.getLeaveRecord().getToDate().toString());
-							totalLeaveDays = (int) ((Math.abs(toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) % 365);
-						}catch (ParseException ex) {
-							logger.debug("ERROR : Parse exception from requestForLeave method : " + ex.getMessage());
-				            ex.printStackTrace();
-				        }
+						totalLeaveDays = Helper.getTotalLeavesByCalculatingFromDateToDate(
+								leaveRequest.getLeaveRecord().getFromDate(),
+								leaveRequest.getLeaveRecord().getToDate());
 						
 						leaveRecord = levRd.get();
 						leaveRecord.setFromDate(leaveRequest.getLeaveRecord().getFromDate());
@@ -313,7 +298,7 @@ public class LeaveServiceImpl implements ILeaveService {
 			//Get all the leave record for all employees under a manager
 			if(authority.equals(Roles.ROLE_MANAGER.name())) {
 
-				Optional<List<Long>> employeeIds = empRepo.findAllEmployeeIdByReportTo(loggedInUSerEmail);
+				Optional<List<Long>> employeeIds = employeeService.getAllEmployeesIdsUnderLoggedInUser();
 				if(employeeIds.isPresent() && employeeIds.get().size() > 0) {
 					if(leaveType == null && leaveStatus == null) {
 						
@@ -336,15 +321,15 @@ public class LeaveServiceImpl implements ILeaveService {
 				List<Long> employeeIds = new ArrayList<Long>();
 				
 				//Find Id's of all the managers
-				Optional<List<Long>> managersIds = empRepo.findAllEmployeeIdByReportTo(loggedInUSerEmail);
+				Optional<List<Long>> managersIds = employeeService.getAllEmployeesIdsUnderLoggedInUser();
 				if(managersIds.isPresent() && managersIds.get().size() > 0) {
 					employeeIds.addAll(managersIds.get());
 					
 					//Find all the managers under HR
-					List<Employee> managers = empRepo.findAllById(managersIds.get());
+					List<Employee> managers = employeeService.getAllEmployeesByIds(managersIds.get());
 					if(managers.size() > 0) {
 						for(Employee manager : managers) {
-							Optional<List<Long>> empIds = empRepo.findAllEmployeeIdByReportTo(manager.getEmail());
+							Optional<List<Long>> empIds = employeeService.getAllEmployeesIdUnderReportToUser(manager.getEmail());
 							if(empIds.isPresent() && empIds.get().size() > 0) {
 								employeeIds.addAll(empIds.get());
 							}
@@ -401,11 +386,10 @@ public class LeaveServiceImpl implements ILeaveService {
 	
 	@Override
 	public ResponseEntity<?> getAllMyLeaves(String leaveType, String leaveStatus) throws Exception{
-		String loggedInUSerEmail = Helper.loggedInUserEmailId();
 		Optional<List<LeaveRequestRecord>> leaveRecords = Optional.empty();
 		
 		try {
-			Optional<Employee> employee = empRepo.findByEmail(loggedInUSerEmail);
+			Optional<Employee> employee = employeeService.getLoggedInEmployeeDetails();
 			if(employee.isPresent()) {
 				List<Long> empIds = new ArrayList<Long>();
 				empIds.add(employee.get().getId());
@@ -482,25 +466,18 @@ public class LeaveServiceImpl implements ILeaveService {
 		
 		try {
 			//Get the loggedin employee details
-			Optional<Employee> employee = empRepo.findByEmail(loggedInUSerEmail);
+			Optional<Employee> employee = employeeService.getLoggedInEmployeeDetails();
 			if(employee.isPresent()) {
 				//Get the leave request record by id
 				leaveReqRecord = leaveRequestRecordRepo.findById(Integer.parseInt(id));
 				if(leaveReqRecord.isPresent()) {
 					Long leaveRequestedEmployeeId = leaveReqRecord.get().getEmployee().getId();
-					if(authority.equals(Roles.ROLE_USER.name())) {
-						//If login user's role is USER then check employee id from 
-						//leaveRequestRecord is equal to logged in employee id
-						if(leaveRequestedEmployeeId != employee.get().getId()) {
-							return new ResponseEntity<Message>(new Message("You don't have permission to view this user's leave request details."), HttpStatus.FORBIDDEN);
-						}
-					}
-					else if(authority.equals(Roles.ROLE_MANAGER.name())) {
-						//If login user's role is MANAGER then check employee id from 
-						//leaveRequestRecord is equal to logged in employee id
-						if(leaveRequestedEmployeeId != employee.get().getId()) {
+					
+					if(leaveRequestedEmployeeId != employee.get().getId()) {
+						
+						if(authority.equals(Roles.ROLE_MANAGER.name())) {
 							//If leave Request is not managers leave then fetch user with id from leave request
-							Optional<Employee> employee1 = empRepo.findById(leaveRequestedEmployeeId);
+							Optional<Employee> employee1 = employeeService.getEmployeeById(leaveRequestedEmployeeId);
 							if(employee1.isPresent()) {
 								//Check user is reporting to logged in users or not
 								if(!employee1.get().getManagerEmail().equals(loggedInUSerEmail)) {
@@ -511,18 +488,14 @@ public class LeaveServiceImpl implements ILeaveService {
 								return new ResponseEntity<Message>(new Message("No employee found for id : " + leaveRequestedEmployeeId), HttpStatus.NOT_FOUND);
 							}
 						}
-					}
-					else if(authority.equals(Roles.ROLE_HR.name())) {
-						//If login user's role is HR then check employee id from 
-						//leaveRequestRecord is equal to logged in employee id
-						if(leaveRequestedEmployeeId != employee.get().getId()) {
+						else if(authority.equals(Roles.ROLE_HR.name())) {
 							//If leave Request is not HR's leave then fetch user with id from leave request
-							Optional<Employee> employee1 = empRepo.findById(leaveRequestedEmployeeId);
+							Optional<Employee> employee1 = employeeService.getEmployeeById(leaveRequestedEmployeeId);
 							if(employee1.isPresent()) {
 								//Check user is reporting to logged in users or not
 								if(!employee1.get().getManagerEmail().equals(loggedInUSerEmail)) {
 									//Assuming the leave request is for role user. So fetching managers details who may report to HR
-									Optional<Employee> employee2 = empRepo.findByEmail(employee.get().getManagerEmail());
+									Optional<Employee> employee2 = employeeService.getEmployeeByEmail(employee.get().getManagerEmail());
 									if(employee2.isPresent()) {
 										//Check user is reporting to logged in users or not
 										if(!employee1.get().getManagerEmail().equals(loggedInUSerEmail)) {
@@ -531,10 +504,12 @@ public class LeaveServiceImpl implements ILeaveService {
 									}
 								}
 							}
-
 						}
-											
-					}
+						else if(authority.equals(Roles.ROLE_USER.name())) {
+							return new ResponseEntity<Message>(new Message("You don't have permission to view this user's leave request details."), HttpStatus.FORBIDDEN);
+						}
+						
+					}					
 				}
 				else {
 					return new ResponseEntity<Message>(new Message("No Leave request record found for id : " + id), HttpStatus.NOT_FOUND);

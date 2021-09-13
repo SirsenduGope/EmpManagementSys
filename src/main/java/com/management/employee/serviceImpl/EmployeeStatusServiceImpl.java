@@ -136,5 +136,15 @@ public class EmployeeStatusServiceImpl implements IEmployeeStatusService {
 		return new ResponseEntity<Message>(new Message("Employee status deleted Successfully."), HttpStatus.OK); 
 	}
 
+	
+	@Override
+	public Optional<EmployeeStatus> getEmployeeStatusByName(String empStatus) throws Exception{
+		try {
+			return empStatusRepo.findByStatus(empStatus);
+		}catch(Exception ex) {
+			logger.debug("Error : Exception occor from getDesignationDetailsByName method.");
+			throw new Exception(ex);
+		}
+	}
 
 }

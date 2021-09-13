@@ -26,11 +26,11 @@ import com.management.employee.enums.Roles;
 import com.management.employee.payload.EmployeeDetailsRequest;
 import com.management.employee.payload.Message;
 import com.management.employee.payload.SignupRequest;
-import com.management.employee.repository.DesignationRepository;
 import com.management.employee.repository.EmployeeRepository;
-import com.management.employee.repository.EmployeeStatusRepository;
 import com.management.employee.repository.RoleRepository;
+import com.management.employee.service.IDesignationService;
 import com.management.employee.service.IEmployeeService;
+import com.management.employee.service.IEmployeeStatusService;
 import com.management.employee.service.ILeaveService;
 import com.management.employee.utils.Helper;
 
@@ -38,26 +38,27 @@ import javassist.NotFoundException;
 
 @Service
 public class EmployeeServiceImpl implements IEmployeeService{
+
+	private PasswordEncoder encoder;
 	
 	private EmployeeRepository empRepo;
-	private PasswordEncoder encoder;
 	private RoleRepository roleRepository;
-	private DesignationRepository designationRepository;
-	private EmployeeStatusRepository empStatusRepository;
 	
 	private ILeaveService leaveService;
+	private IDesignationService designationService;
+	private IEmployeeStatusService employeeStatusService;
 	
 	public EmployeeServiceImpl(final EmployeeRepository empRepo,
 			final PasswordEncoder encoder,
+			final IDesignationService designationService,
+			final IEmployeeStatusService employeeStatusService,
 			final RoleRepository roleRepository,
-			final DesignationRepository designationRepository,
-			final EmployeeStatusRepository empStatusRepository,
 			final ILeaveService leaveService) {
 		this.empRepo = empRepo;
 		this.encoder = encoder;
+		this.designationService = designationService;
+		this.employeeStatusService = employeeStatusService;
 		this.roleRepository = roleRepository;
-		this.designationRepository = designationRepository;
-		this.empStatusRepository = empStatusRepository;
 		this.leaveService = leaveService;
 	}
 	
@@ -286,14 +287,14 @@ public class EmployeeServiceImpl implements IEmployeeService{
 						
 						if(employeeDetailsReq.getDesignation() != null) {
 							try{
-								Optional<Designation> empDesignation = designationRepository.findByDesignation(employeeDetailsReq.getDesignation());
+								Optional<Designation> empDesignation = designationService.getDesignationDetailsByName(employeeDetailsReq.getDesignation());
 								if(empDesignation.isPresent()) {
 									updatedEmpDetails.setDesignation(empDesignation.get());
 								}
 								else {
-									Designation newDesignation = designationRepository.saveAndFlush(new Designation(employeeDetailsReq.getDesignation()));
-									if(newDesignation != null) {
-										updatedEmpDetails.setDesignation(newDesignation);
+									ResponseEntity<?> newDesignation = designationService.addNewDesignation(new Designation(employeeDetailsReq.getDesignation()));
+									if(newDesignation.getStatusCodeValue() >= 200 && newDesignation.getStatusCodeValue() < 300) {
+										updatedEmpDetails.setDesignation((Designation) newDesignation.getBody());
 									}
 								}
 							}catch(IllegalArgumentException ex) {
@@ -304,14 +305,14 @@ public class EmployeeServiceImpl implements IEmployeeService{
 						
 						try {
 							if(employeeDetailsReq.getStatus() != null) {
-								Optional<EmployeeStatus> empStatus = empStatusRepository.findByStatus(employeeDetailsReq.getStatus());
+								Optional<EmployeeStatus> empStatus = employeeStatusService.getEmployeeStatusByName(employeeDetailsReq.getStatus());
 								if(empStatus.isPresent()) {
 									updatedEmpDetails.setEmpStatus(empStatus.get());
 								}
 								else {
-									EmployeeStatus newEmpStatus = empStatusRepository.saveAndFlush(new EmployeeStatus(employeeDetailsReq.getStatus()));
-									if(newEmpStatus != null) {
-										updatedEmpDetails.setEmpStatus(newEmpStatus);
+									ResponseEntity<?> newEmpStatus = employeeStatusService.addNewEmployeeStauts(new EmployeeStatus(employeeDetailsReq.getStatus()));
+									if(newEmpStatus.getStatusCodeValue() >=200 || newEmpStatus.getStatusCodeValue() < 300) {
+										updatedEmpDetails.setEmpStatus((EmployeeStatus) newEmpStatus.getBody());
 									}
 								}
 							}
@@ -560,6 +561,92 @@ public class EmployeeServiceImpl implements IEmployeeService{
 		}
 		
 		return new ResponseEntity<List<Employee>>(employees.get(), HttpStatus.OK);
+	}
+	
+	@Override
+	public Optional<Employee> getLoggedInEmployeeDetails() throws Exception{
+		String loggedInUserEmail = Helper.loggedInUserEmailId();
+		try {
+			return empRepo.findByEmail(loggedInUserEmail);
+		}catch(Exception ex) {
+			logger.debug("Error : Exception occor from getEmployeeByEmail method.");
+			throw new Exception(ex);
+		}
+	}
+	
+	@Override
+	public Optional<Employee> getLoggedInUserDetails() throws Exception{
+		String loggedInUserEmail = Helper.loggedInUserEmailId();
+		try {
+			return empRepo.findByEmail(loggedInUserEmail);
+		}catch(Exception ex) {
+			logger.debug("Error : Exception occor from getLoggedInUserDetails method.");
+			throw new Exception(ex);
+		}
+	}
+	
+	
+	
+	@Override
+	public Optional<List<Employee>> getAllEmployeesUnderLoggedInUser() throws Exception {
+		String loggedInUserEmail = Helper.loggedInUserEmailId();
+		try {
+			return empRepo.findByReportTo(loggedInUserEmail);
+		}catch(Exception ex) {
+			logger.debug("Error : Exception occor from getAllEmployeeUnderLoggedInUser method.");
+			throw new Exception(ex);
+		}
+	}
+	
+	@Override
+	public Optional<List<Long>> getAllEmployeesIdsUnderLoggedInUser() throws Exception {
+		String loggedInUserEmail = Helper.loggedInUserEmailId();
+		try {
+			return empRepo.findAllEmployeeIdByReportTo(loggedInUserEmail);
+		}catch(Exception ex) {
+			logger.debug("Error : Exception occor from getAllEmployeeIdsUnderLoggedInUser method.");
+			throw new Exception(ex);
+		}
+	}
+	
+	@Override
+	public Optional<List<Long>> getAllEmployeesIdUnderReportToUser(String reportToUserEmail) throws Exception {
+		try {
+			return empRepo.findAllEmployeeIdByReportTo(reportToUserEmail);
+		}catch(Exception ex) {
+			logger.debug("Error : Exception occor from getAllEmployeeIdUnderReportToUser method.");
+			throw new Exception(ex);
+		}
+	}
+	
+	@Override
+	public Optional<Employee> getEmployeeById(Long id) throws Exception{
+		try {
+			return empRepo.findById(id);
+		}catch(Exception ex) {
+			logger.debug("Error : Exception occor from getEmployeeById method.");
+			throw new Exception(ex);
+		}
+	}
+	
+	@Override
+	public Optional<Employee> getEmployeeByEmail(String email) throws Exception{
+		try {
+			return empRepo.findByEmail(email);
+		}catch(Exception ex) {
+			logger.debug("Error : Exception occor from getEmployeeByEmail method.");
+			throw new Exception(ex);
+		}
+	}
+	
+	@Override
+	public List<Employee> getAllEmployeesByIds(List<Long> ids) throws Exception{
+		try {
+			return empRepo.findAllById(ids);
+		}catch(Exception ex) {
+			logger.debug("Error : Exception occor from getEmployeeByEmail method.");
+			throw new Exception(ex);
+		}
 	}
 	
 }

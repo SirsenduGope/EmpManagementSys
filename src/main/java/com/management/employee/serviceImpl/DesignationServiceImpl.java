@@ -88,7 +88,7 @@ public class DesignationServiceImpl implements IDesignationService {
 			if(newDesignation != null) {
 				Boolean isExist = designationRepo.existsByDesignation(newDesignation.getDesignation());
 				if(!isExist) {
-					designation = designationRepo.save(newDesignation);
+					designation = designationRepo.saveAndFlush(newDesignation);
 				}
 				else {
 					return new ResponseEntity<Message>(new Message("Designation is already exist."), HttpStatus.OK); 
@@ -134,6 +134,16 @@ public class DesignationServiceImpl implements IDesignationService {
 		}
 		
 		return new ResponseEntity<Message>(new Message("Designation deleted Successfully."), HttpStatus.OK); 
+	}
+	
+	@Override
+	public Optional<Designation> getDesignationDetailsByName(String designation) throws Exception{
+		try {
+			return designationRepo.findByDesignation(designation);
+		}catch(Exception ex) {
+			logger.debug("Error : Exception occor from getDesignationDetailsByName method.");
+			throw new Exception(ex);
+		}
 	}
 
 
