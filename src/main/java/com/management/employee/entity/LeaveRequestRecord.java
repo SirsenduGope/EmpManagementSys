@@ -64,6 +64,9 @@ public class LeaveRequestRecord extends Auditable<String> implements Serializabl
 	@Column(name = "response_date")
 	private Date responseDate;
 	
+	@Column(name = "action_taken_by")
+	private String actionTakenBy;
+	
 	@JsonIgnore
 	@Column(name = "deleted", columnDefinition = "bit(1) default b'0'")
 	private boolean deleted = Boolean.FALSE;
@@ -82,7 +85,7 @@ public class LeaveRequestRecord extends Auditable<String> implements Serializabl
 	
 	public LeaveRequestRecord(Employee employee, Date fromDate, Date toDate, String leaveReason,
 			Integer totalLeaveDays, LeaveStatus status, LeaveType leaveType, Date requestDate, 
-			Date responseDate) {
+			Date responseDate, String actionTakenBy) {
 		super();
 		this.employee = employee;
 		this.fromDate = fromDate;
@@ -93,6 +96,7 @@ public class LeaveRequestRecord extends Auditable<String> implements Serializabl
 		this.leaveType = leaveType;
 		this.requestDate = requestDate;
 		this.responseDate = responseDate;
+		this.actionTakenBy = actionTakenBy;
 	}
 	
 	public Integer getId() {
@@ -177,6 +181,14 @@ public class LeaveRequestRecord extends Auditable<String> implements Serializabl
 
 	public void setResponseDate(Date responseDate) {
 		this.responseDate = responseDate;
+	}
+
+	public String getActionTakenBy() {
+		return actionTakenBy;
+	}
+
+	public void setActionTakenBy(String actionTakenBy) {
+		this.actionTakenBy = actionTakenBy;
 	}
 
 	@Override

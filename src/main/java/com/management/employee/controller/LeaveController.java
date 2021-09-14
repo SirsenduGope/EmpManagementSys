@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.management.employee.entity.LeaveRequestRecord;
 import com.management.employee.entity.LeaveSettings;
 import com.management.employee.payload.LeaveDetailsRequest;
 import com.management.employee.payload.LeaveRequest;
@@ -74,6 +75,16 @@ public class LeaveController {
 	public ResponseEntity<?> updateLeaveRequest(@RequestBody LeaveRequest leaveRequest) throws Exception{
 
 		return leaveService.updateLeaveRequestRecord(leaveRequest);
+	}
+	
+	
+	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER') || hasRole('USER')")
+	@RequestMapping(value = "/", method = RequestMethod.PUT)
+	public ResponseEntity<?> updateLeaveRequest(
+			@RequestParam(value = "action", required = true) String acction,
+			@RequestBody LeaveRequestRecord leaveRequest) throws Exception{
+
+		return leaveService.leaveApproveOrRejectAction(acction, leaveRequest);
 	}
 	
 	

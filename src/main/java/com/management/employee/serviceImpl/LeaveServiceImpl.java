@@ -18,6 +18,7 @@ import com.management.employee.entity.LeaveCountDetails;
 import com.management.employee.entity.LeaveRequestRecord;
 import com.management.employee.entity.LeaveSettings;
 import com.management.employee.enums.LeaveStatus;
+import com.management.employee.enums.LeaveType;
 import com.management.employee.enums.Roles;
 import com.management.employee.payload.LeaveDetailsRequest;
 import com.management.employee.payload.LeaveRequest;
@@ -195,7 +196,7 @@ public class LeaveServiceImpl implements ILeaveService {
 								totalLeaveDays,
 								LeaveStatus.REQUESTED,
 								leaveReq.getLeaveRecord().getLeaveType(),
-								new Date(), null);
+								new Date(), null, null);
 						
 						leaveRequestRecordRepo.save(leaveRecord);
 						
@@ -526,5 +527,130 @@ public class LeaveServiceImpl implements ILeaveService {
 		}
 		
 		return new ResponseEntity<LeaveRequestRecord>(leaveReqRecord.get(), HttpStatus.OK);
+	}
+	
+	
+	@Transactional
+	@Override
+	public ResponseEntity<?> leaveApproveOrRejectAction(String action, LeaveRequestRecord leaveReq) throws Exception{
+		String loggedInUSerEmail = Helper.loggedInUserEmailId();
+		String authority = Helper.loggedInUserAuthority();
+		
+		try {
+			Long employeeId = leaveReq.getEmployee().getId();
+			Optional<Employee> requestedEmp = employeeService.getEmployeeById(employeeId);
+			if(requestedEmp.isPresent()) {
+				if(authority.equals(Roles.ROLE_USER.name()) ||
+						requestedEmp.get().getEmail().equals(loggedInUSerEmail)) {
+					return new ResponseEntity<Message>(new Message("You don't have permission for this action."), HttpStatus.FORBIDDEN);
+				}
+				else if(authority.equals(Roles.ROLE_MANAGER.name())) {
+					if(!requestedEmp.get().getManagerEmail().equals(loggedInUSerEmail)) {
+						return new ResponseEntity<Message>(new Message("You don't have permission for this user."), HttpStatus.FORBIDDEN);
+					}
+				}
+				else if(authority.equals(Roles.ROLE_HR.name())) {
+					if(!requestedEmp.get().getManagerEmail().equals(loggedInUSerEmail)) {
+						Optional<Employee> employee1 = employeeService.getEmployeeByEmail(requestedEmp.get().getManagerEmail());
+						if(employee1.isPresent()) {
+							if(!employee1.get().getManagerEmail().equals(loggedInUSerEmail)) {
+								return new ResponseEntity<Message>(new Message("You don't have permission for this user."), HttpStatus.FORBIDDEN);
+							}
+						}
+						else {
+							return new ResponseEntity<Message>(new Message("No employee found for email : " + requestedEmp.get().getManagerEmail()), HttpStatus.NOT_FOUND);
+						}
+					}
+				}
+			}
+			else {
+				return new ResponseEntity<Message>(new Message("No employee found for id : " + employeeId), HttpStatus.NOT_FOUND);
+			}
+			
+			
+			if(leaveReq.getStatus().equals(LeaveStatus.REQUESTED.name())) {
+				if(action.equals(LeaveStatus.REJECTED.name())) {
+					leaveReq.setStatus(LeaveStatus.REJECTED);
+					leaveReq.setResponseDate(new Date());
+					leaveReq.setActionTakenBy(loggedInUSerEmail);
+					
+					leaveRequestRecordRepo.save(leaveReq);
+				}
+				
+				if(leaveReq.getStatus().equals(LeaveStatus.ACCEPTED.name())) {
+					leaveReq.setStatus(LeaveStatus.ACCEPTED);
+					leaveReq.setResponseDate(new Date());
+					leaveReq.setActionTakenBy(loggedInUSerEmail);
+					
+					leaveRequestRecordRepo.saveAndFlush(leaveReq);
+					
+					LeaveCountDetails leaveCountDetails = null;
+					Optional<LeaveCountDetails> optLeaveCntDtl = leaveCountDetailsRepo.findByEmployeeId(employeeId);
+					if(optLeaveCntDtl.isPresent()) {
+						leaveCountDetails = optLeaveCntDtl.get();
+						Integer totalRequestedLeaves = leaveReq.getTotalLeaveDays();
+						
+						if(leaveReq.getLeaveType().equals(LeaveType.CASUAL_LEAVE.name())) {
+							Double remainingCasualLeaves = leaveCountDetails.getRemainingCasualLeave();
+							
+							if(totalRequestedLeaves <= remainingCasualLeaves) {
+								remainingCasualLeaves = remainingCasualLeaves - totalRequestedLeaves;
+								leaveCountDetails.setRemainingCasualLeave(remainingCasualLeaves);
+							}
+							else {
+								int totalLop = (int) (totalRequestedLeaves - remainingCasualLeaves);
+								leaveCountDetails.setRemainingCasualLeave(0d);
+								leaveCountDetails.setTotalLOP(totalLop);
+							}
+							leaveCountDetails.setRemainingLeaves(Double.parseDouble(totalRequestedLeaves.toString()));
+						}
+						
+						else if(leaveReq.getLeaveType().equals(LeaveType.SICK_LEAVE.name())) {
+							Double remainingSickLeaves = leaveCountDetails.getRemainingSickLeave();
+							
+							if(totalRequestedLeaves <= remainingSickLeaves) {
+								remainingSickLeaves = remainingSickLeaves - totalRequestedLeaves;
+								leaveCountDetails.setRemainingSickLeave(remainingSickLeaves);
+							}
+							else {
+								int totalLop = (int) (totalRequestedLeaves - remainingSickLeaves);
+								leaveCountDetails.setRemainingSickLeave(0d);
+								leaveCountDetails.setTotalLOP(totalLop);
+							}
+							leaveCountDetails.setRemainingLeaves(Double.parseDouble(totalRequestedLeaves.toString()));
+						}
+						else {
+							Double remainingEarnLeaves = leaveCountDetails.getRemainingEarnLeave();
+							
+							if(totalRequestedLeaves <= remainingEarnLeaves) {
+								remainingEarnLeaves = remainingEarnLeaves - totalRequestedLeaves;
+								leaveCountDetails.setRemainingEarnLeave(remainingEarnLeaves);
+							}
+							else {
+								int totalLop = (int) (totalRequestedLeaves - remainingEarnLeaves);
+								leaveCountDetails.setRemainingEarnLeave(0d);
+								leaveCountDetails.setTotalLOP(totalLop);
+							}
+							leaveCountDetails.setRemainingLeaves(Double.parseDouble(totalRequestedLeaves.toString()));
+						}
+					}
+					
+					leaveCountDetailsRepo.save(leaveCountDetails);
+				}
+			}
+			else {
+				return new ResponseEntity<Message>(new Message("This leave request is already " + leaveReq.getStatus()), HttpStatus.BAD_REQUEST);
+			}
+			
+		}catch(Exception ex) {
+			logger.debug("ERROR : On leave count update from method leaveApproveOrRejectAction");
+			logger.debug("ERROR : Error message is : " + ex.getMessage());
+			throw new Exception("ERROR : On leave count update from method leaveApproveOrRejectAction", ex);
+		}
+		
+		return new ResponseEntity<Message>(new Message("Requested leave " + action + " successfully."), HttpStatus.OK);
+		
+		
+		
 	}
 }
