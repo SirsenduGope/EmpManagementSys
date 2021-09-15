@@ -3,6 +3,7 @@ package com.management.employee.entity;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -151,6 +152,29 @@ public class Employee extends Auditable<String> implements Serializable {
 		this.managerEmail = manager;
 	}
 
+	@Override
+	public int hashCode() {
+		return Objects.hash(deleted, email, employeeDetails, id, leaveDetails, leaveRecord, managerEmail, password,
+				roles);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Employee other = (Employee) obj;
+		return deleted == other.deleted && Objects.equals(email, other.email)
+				&& Objects.equals(employeeDetails, other.employeeDetails) && Objects.equals(id, other.id)
+				&& Objects.equals(leaveDetails, other.leaveDetails) && Objects.equals(leaveRecord, other.leaveRecord)
+				&& Objects.equals(managerEmail, other.managerEmail) && Objects.equals(password, other.password)
+				&& Objects.equals(roles, other.roles);
+	}
+
+	
 
 	/*
 	 * @Override public String toString() { return "Employee [id=" + id + ", email="

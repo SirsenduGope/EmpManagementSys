@@ -42,7 +42,7 @@ public class EmployeeController {
 	
 	@PreAuthorize("hasRole('USER') or hasRole('HR') or hasRole('ADMIN') or hasRole('MANAGER')")
 	@RequestMapping(value = "/list", method = RequestMethod.GET)
-	public ResponseEntity<?> getAllEmployee() {
+	public ResponseEntity<?> getAllEmployee() throws Exception {
 		
 		return employeeService.getAllEmployee();
 	}

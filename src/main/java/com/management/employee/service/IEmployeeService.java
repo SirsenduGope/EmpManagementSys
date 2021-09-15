@@ -13,7 +13,7 @@ import javassist.NotFoundException;
 
 public interface IEmployeeService {
 
-	public ResponseEntity<?> getAllEmployee();
+	public ResponseEntity<?> getAllEmployee() throws Exception;
 
 	public ResponseEntity<?> createNewEmployee(SignupRequest signupRequest) throws NotFoundException, Exception;
 
@@ -26,8 +26,6 @@ public interface IEmployeeService {
 	public ResponseEntity<?> getEmployeesByRole(String role) throws Exception;
 	
 	
-
-	public Optional<Employee> getLoggedInUserDetails() throws Exception;
 
 	public Optional<List<Employee>> getAllEmployeesUnderLoggedInUser() throws Exception;
 
@@ -42,5 +40,9 @@ public interface IEmployeeService {
 	public List<Employee> getAllEmployeesByIds(List<Long> ids) throws Exception;
 
 	public Optional<Employee> getLoggedInEmployeeDetails() throws Exception;
+
+	public Optional<List<Employee>> getAllEmployeesUnderReportToUser(String reportToUserEmail) throws Exception;
+
+	public boolean isLoggedInUserHasAccessToThisEmployee(Long id, boolean selfAccess) throws Exception;
 
 }

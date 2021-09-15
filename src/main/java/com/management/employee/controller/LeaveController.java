@@ -56,7 +56,7 @@ public class LeaveController {
 	
 	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER') || hasRole('USER')")
 	@RequestMapping(value = "/apply", method = RequestMethod.POST)
-	public ResponseEntity<?> requestForLeave(@RequestBody LeaveRequest leaveRequest) throws Exception{
+	public ResponseEntity<?> requestForLeave(@RequestBody LeaveRequestRecord leaveRequest) throws Exception{
 
 		return leaveService.requestForLeave(leaveRequest);
 	}
@@ -72,13 +72,13 @@ public class LeaveController {
 	
 	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER') || hasRole('USER')")
 	@RequestMapping(value = "/edit", method = RequestMethod.PUT)
-	public ResponseEntity<?> updateLeaveRequest(@RequestBody LeaveRequest leaveRequest) throws Exception{
+	public ResponseEntity<?> updateLeaveRequest(@RequestBody LeaveRequestRecord leaveRequest) throws Exception{
 
 		return leaveService.updateLeaveRequestRecord(leaveRequest);
 	}
 	
 	
-	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER') || hasRole('USER')")
+	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER')")
 	@RequestMapping(value = "/", method = RequestMethod.PUT)
 	public ResponseEntity<?> updateLeaveRequest(
 			@RequestParam(value = "action", required = true) String acction,

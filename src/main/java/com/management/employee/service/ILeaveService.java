@@ -6,7 +6,6 @@ import com.management.employee.entity.Employee;
 import com.management.employee.entity.LeaveRequestRecord;
 import com.management.employee.entity.LeaveSettings;
 import com.management.employee.payload.LeaveDetailsRequest;
-import com.management.employee.payload.LeaveRequest;
 
 public interface ILeaveService {
 
@@ -16,9 +15,9 @@ public interface ILeaveService {
 
 	public ResponseEntity<?> updateLeaveCountDetailsForEmployee(LeaveDetailsRequest leaveDetailsReq) throws Exception;
 
-	public ResponseEntity<?> requestForLeave(LeaveRequest leaveReq) throws Exception;
+	public ResponseEntity<?> requestForLeave(LeaveRequestRecord leaveReq) throws Exception;
 
-	public ResponseEntity<?> updateLeaveRequestRecord(LeaveRequest leaveRequest) throws Exception;
+	public ResponseEntity<?> updateLeaveRequestRecord(LeaveRequestRecord leaveRequest) throws Exception;
 
 	public ResponseEntity<?> getAllRequetedLeaves(String leaveType, String leaveStatus) throws Exception;
 
