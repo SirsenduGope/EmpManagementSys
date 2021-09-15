@@ -53,7 +53,7 @@ public class LeaveRequestRecord extends Auditable<String> implements Serializabl
 	private String leaveReason;
 	
 	@Column(name = "leave_status", nullable = false)
-	private LeaveStatus status;
+	private LeaveStatus leaveStatus;
 	
 	@Column(name = "leave_type", nullable = false)
 	private LeaveType leaveType;
@@ -75,16 +75,16 @@ public class LeaveRequestRecord extends Auditable<String> implements Serializabl
 		super();
 	}
 
-	public LeaveRequestRecord(Date fromDate, Date toDate, String leaveReason, LeaveStatus status) {
+	public LeaveRequestRecord(Date fromDate, Date toDate, String leaveReason, LeaveStatus leaveStatus) {
 		super();
 		this.fromDate = fromDate;
 		this.toDate = toDate;
 		this.leaveReason = leaveReason;
-		this.status = status;
+		this.leaveStatus = leaveStatus;
 	}
 	
 	public LeaveRequestRecord(Employee employee, Date fromDate, Date toDate, String leaveReason,
-			Integer totalLeaveDays, LeaveStatus status, LeaveType leaveType, Date requestDate, 
+			Integer totalLeaveDays, LeaveStatus leaveStatus, LeaveType leaveType, Date requestDate, 
 			Date responseDate, String actionTakenBy) {
 		super();
 		this.employee = employee;
@@ -92,7 +92,7 @@ public class LeaveRequestRecord extends Auditable<String> implements Serializabl
 		this.toDate = toDate;
 		this.leaveReason = leaveReason;
 		this.totalLeaveDays = totalLeaveDays;
-		this.status = status;
+		this.leaveStatus = leaveStatus;
 		this.leaveType = leaveType;
 		this.requestDate = requestDate;
 		this.responseDate = responseDate;
@@ -135,12 +135,12 @@ public class LeaveRequestRecord extends Auditable<String> implements Serializabl
 		this.leaveReason = leaveReason;
 	}
 
-	public LeaveStatus getStatus() {
-		return status;
+	public LeaveStatus getLeaveStatus() {
+		return leaveStatus;
 	}
 
-	public void setStatus(LeaveStatus status) {
-		this.status = status;
+	public void setLeaveStatus(LeaveStatus leaveStatus) {
+		this.leaveStatus = leaveStatus;
 	}
 
 	public boolean isDeleted() {
@@ -194,7 +194,7 @@ public class LeaveRequestRecord extends Auditable<String> implements Serializabl
 	@Override
 	public String toString() {
 		return "LeaveRecord [id=" + id + ", employee=" + employee + ", fromDate=" + fromDate + ", toDate=" + toDate
-				+ ", totalLeaveDays=" + totalLeaveDays + ", leaveReason=" + leaveReason + ", status=" + status
+				+ ", totalLeaveDays=" + totalLeaveDays + ", leaveReason=" + leaveReason + ", leaveStatus=" + leaveStatus
 				+ ", leaveType=" + leaveType + ", requestDate=" + requestDate + ", responseDate=" + responseDate
 				+ ", deleted=" + deleted + "]";
 	}
