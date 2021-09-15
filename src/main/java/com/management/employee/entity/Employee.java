@@ -174,17 +174,12 @@ public class Employee extends Auditable<String> implements Serializable {
 				&& Objects.equals(roles, other.roles);
 	}
 
-	
+	@Override
+	public String toString() {
+		return "Employee [id=" + id + ", email=" + email + ", password=" + password + ", managerEmail=" + managerEmail
+				+ ", employeeDetails=" + employeeDetails + ", roles=" + roles + ", leaveRecord=" + leaveRecord
+				+ ", leaveDetails=" + leaveDetails + ", deleted=" + deleted + "]";
+	}
 
-	/*
-	 * @Override public String toString() { return "Employee [id=" + id + ", email="
-	 * + email + ", password=" + password + ", manager=" + manager.getEmail() +
-	 * ", subordinates=" + subordinates + ", employeeDetails=" + employeeDetails +
-	 * ", roles=" + roles + ", deleted=" + deleted + "]"; }
-	 */
-
-	
-	
-	
 	
 }

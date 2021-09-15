@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.management.employee.entity.LeaveRequestRecord;
 import com.management.employee.entity.LeaveSettings;
 import com.management.employee.payload.LeaveDetailsRequest;
-import com.management.employee.payload.LeaveRequest;
 import com.management.employee.service.ILeaveService;
 
 
