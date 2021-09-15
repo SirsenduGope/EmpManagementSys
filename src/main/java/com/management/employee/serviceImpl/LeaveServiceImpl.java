@@ -244,8 +244,8 @@ public class LeaveServiceImpl implements ILeaveService {
 			
 			Optional<LeaveRequestRecord> levRd = leaveRequestRecordRepo.findByIdAndEmployeeId(leaveRequest.getLeaveRecord().getId(), emp.get().getId());
 			if(levRd.isPresent()) {
-				if(!levRd.get().getStatus().value.equals(LeaveStatus.ACCEPTED.value) ||
-						!levRd.get().getStatus().value.equals(LeaveStatus.REJECTED.value)) {
+				if(!levRd.get().getLeaveStatus().value.equals(LeaveStatus.ACCEPTED.value) ||
+						!levRd.get().getLeaveStatus().value.equals(LeaveStatus.REJECTED.value)) {
 					
 					if(leaveRequest.getLeaveRecord().getFromDate().before(leaveRequest.getLeaveRecord().getToDate())) {
 						totalLeaveDays = Helper.getTotalLeavesByCalculatingFromDateToDate(
@@ -568,17 +568,17 @@ public class LeaveServiceImpl implements ILeaveService {
 			}
 			
 			
-			if(leaveReq.getStatus().equals(LeaveStatus.REQUESTED.name())) {
+			if(leaveReq.getLeaveStatus().equals(LeaveStatus.REQUESTED.name())) {
 				if(action.equals(LeaveStatus.REJECTED.name())) {
-					leaveReq.setStatus(LeaveStatus.REJECTED);
+					leaveReq.setLeaveStatus(LeaveStatus.REJECTED);
 					leaveReq.setResponseDate(new Date());
 					leaveReq.setActionTakenBy(loggedInUSerEmail);
 					
 					leaveRequestRecordRepo.save(leaveReq);
 				}
 				
-				if(leaveReq.getStatus().equals(LeaveStatus.ACCEPTED.name())) {
-					leaveReq.setStatus(LeaveStatus.ACCEPTED);
+				if(leaveReq.getLeaveStatus().equals(LeaveStatus.ACCEPTED.name())) {
+					leaveReq.setLeaveStatus(LeaveStatus.ACCEPTED);
 					leaveReq.setResponseDate(new Date());
 					leaveReq.setActionTakenBy(loggedInUSerEmail);
 					
@@ -639,7 +639,7 @@ public class LeaveServiceImpl implements ILeaveService {
 				}
 			}
 			else {
-				return new ResponseEntity<Message>(new Message("This leave request is already " + leaveReq.getStatus()), HttpStatus.BAD_REQUEST);
+				return new ResponseEntity<Message>(new Message("This leave request is already " + leaveReq.getLeaveStatus()), HttpStatus.BAD_REQUEST);
 			}
 			
 		}catch(Exception ex) {
