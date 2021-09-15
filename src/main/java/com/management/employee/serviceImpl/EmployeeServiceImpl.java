@@ -66,39 +66,13 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	
 	
 	@Override
-	public ResponseEntity<?> getAllEmployee() {
+	public ResponseEntity<?> getAllEmployee() throws Exception {
 		String loggedInUserEmailId = Helper.loggedInUserEmailId();
 		String authority = Helper.loggedInUserAuthority();
 		Optional<List<Employee>> employees = Optional.empty();
-
-		if(authority.equals(Roles.ROLE_MANAGER.name())) {
-			employees = empRepo.findByReportTo(loggedInUserEmailId);
-			if(employees.isPresent()) {
-				return new ResponseEntity<List<Employee>>(employees.get(), HttpStatus.OK);
-			}
-			else {
-				return new ResponseEntity<Message>(new Message("No User present for manager :" + loggedInUserEmailId), HttpStatus.OK);
-			}
-		}
-		else if(authority.equals(Roles.ROLE_HR.name())) {
-			employees = empRepo.findByReportTo(loggedInUserEmailId);
-			if(employees.isPresent()) {
-				List<Employee> users = new ArrayList<Employee>();
-				for(Employee manager : employees.get()) {
-					Optional<List<Employee>> usersUnderManger = empRepo.findByReportTo(manager.getEmail());
-					if(usersUnderManger.isPresent()) {
-						users.addAll(usersUnderManger.get());
-					}
-				}
-				if(users.size() > 0) {
-					employees.get().addAll(users);
-				}
-			}
-		}
-		else if(authority.equals(Roles.ROLE_USER.name())) {
-			Optional<Employee> reportPerson = empRepo.findByEmail(loggedInUserEmailId);
-			if(reportPerson.isPresent() && reportPerson.get().getManagerEmail() != null) {
-				employees = empRepo.findByReportTo(reportPerson.get().getManagerEmail());
+		try {
+			if(authority.equals(Roles.ROLE_MANAGER.name())) {
+				employees = getAllEmployeesUnderLoggedInUser();
 				if(employees.isPresent()) {
 					return new ResponseEntity<List<Employee>>(employees.get(), HttpStatus.OK);
 				}
@@ -106,10 +80,46 @@ public class EmployeeServiceImpl implements IEmployeeService{
 					return new ResponseEntity<Message>(new Message("No User present for manager :" + loggedInUserEmailId), HttpStatus.OK);
 				}
 			}
+			else if(authority.equals(Roles.ROLE_HR.name())) {
+				employees = getAllEmployeesUnderLoggedInUser();
+				if(employees.isPresent()) {
+					List<Employee> users = new ArrayList<Employee>();
+					for(Employee manager : employees.get()) {
+						Optional<List<Employee>> usersUnderManger = getAllEmployeesUnderReportToUser(manager.getEmail());
+						if(usersUnderManger.isPresent()) {
+							users.addAll(usersUnderManger.get());
+						}
+					}
+					if(users.size() > 0) {
+						employees.get().addAll(users);
+					}
+				}
+			}
+			else if(authority.equals(Roles.ROLE_USER.name())) {
+				Optional<Employee> reportPerson = getLoggedInEmployeeDetails();
+				if(reportPerson.isPresent() && reportPerson.get().getManagerEmail() != null) {
+					employees = getAllEmployeesUnderReportToUser(reportPerson.get().getManagerEmail());
+					if(employees.isPresent()) {
+						return new ResponseEntity<List<Employee>>(employees.get(), HttpStatus.OK);
+					}
+					else {
+						return new ResponseEntity<Message>(new Message("No User present for manager :" + loggedInUserEmailId), HttpStatus.OK);
+					}
+				}
+			}
+			else {
+				employees = Optional.of(empRepo.findAll());
+			}
+		}catch(NotFoundException ex) {
+			logger.debug("ERROR : No Employye found for user : " + loggedInUserEmailId);
+			logger.debug("Stack Trace : " + ex.getStackTrace());
+			throw new NotFoundException("No Employye found for user : " + loggedInUserEmailId);
+		}catch(Exception ex) {
+			logger.debug("ERROR : On getting all employee from method getAllEmployee");
+			logger.debug("Stack Trace : " + ex.getStackTrace());
+			throw new Exception("No Employye found for user : " + loggedInUserEmailId);
 		}
-		else {
-			employees = Optional.of(empRepo.findAll());
-		}
+		
 		
 		return new ResponseEntity<List<Employee>>(employees.get(), HttpStatus.OK);
 	}
@@ -119,7 +129,6 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	@Override
 	public ResponseEntity<?> createNewEmployee(@RequestBody SignupRequest signupRequest) throws Exception {
 		
-		String loggedInUserEmailId = Helper.loggedInUserEmailId();
 		String authority = Helper.loggedInUserAuthority();
 		
 		Employee newEmployee = null;
@@ -128,7 +137,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 		if(signupRequest.getEmail() != null && signupRequest.getPassword() != null
 				&& signupRequest.getFirstName() != null) {
 			
-			Optional<Employee> oldEmployee = empRepo.findByEmail(signupRequest.getEmail());
+			Optional<Employee> oldEmployee = getEmployeeByEmail(signupRequest.getEmail());
 			
 			if(oldEmployee.isPresent()) {
 				return new ResponseEntity<Message>(new Message("User is already present with the email id : " + signupRequest.getEmail()), HttpStatus.BAD_REQUEST);
@@ -148,7 +157,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 						.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
 				roles.add(userRole);
 				
-				Optional<Employee> reportTo = empRepo.findByEmail(loggedInUserEmailId);
+				Optional<Employee> reportTo = getLoggedInEmployeeDetails();
 				
 				newEmployee.setRoles(roles);
 				newEmployee.setManagerEmail(reportTo.get().getEmail());
@@ -162,13 +171,13 @@ public class EmployeeServiceImpl implements IEmployeeService{
 						newEmployee.setRoles(roles);
 					}
 					if(role.equals(Roles.ROLE_MANAGER.name())) {
-						Optional<Employee> reportTo = empRepo.findByEmail(loggedInUserEmailId);
+						Optional<Employee> reportTo = getLoggedInEmployeeDetails();
 						newEmployee.setManagerEmail(reportTo.get().getEmail());
 					}
 					if(role.equals(Roles.ROLE_USER.name())) {
 						String managerId = signupRequest.getReportTo();
 						if(managerId != null) {
-							Optional<Employee> manager = empRepo.findByEmail(managerId);
+							Optional<Employee> manager = getEmployeeByEmail(managerId);
 							if(manager.isPresent()) {
 								newEmployee.setManagerEmail(manager.get().getEmail());
 							}
@@ -189,7 +198,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 						newEmployee.setRoles(roles);
 					}
 					if(signupRequest.getReportTo() != null) {
-						Optional<Employee> manager = empRepo.findByEmail(signupRequest.getReportTo());
+						Optional<Employee> manager = getEmployeeByEmail(signupRequest.getReportTo());
 						if(manager.isPresent()) {
 							newEmployee.setManagerEmail(manager.get().getEmail());
 						}
@@ -238,37 +247,20 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	@Override
 	public ResponseEntity<?> saveEmployeeDetails(EmployeeDetailsRequest employeeDetailsReq) throws Exception{
 		Employee newEmployee = new Employee();
-		String loggedInUSerEmail = Helper.loggedInUserEmailId();
-		String authority = Helper.loggedInUserAuthority();
+		boolean hasAccess = false;
 		
 		if(employeeDetailsReq != null && employeeDetailsReq.getId() != null 
 				&& employeeDetailsReq.getEmployeeDetails().getFirstName() != null) {
 			try {
-				Optional<Employee> emp = empRepo.findById(Long.parseLong(employeeDetailsReq.getId()));
+				
+				hasAccess = isLoggedInUserHasAccessToThisEmployee(Long.parseLong(employeeDetailsReq.getId()), true);
+				if(!hasAccess) {
+					return new ResponseEntity<Message>(new Message("You don't have access save or update another user record."), HttpStatus.FORBIDDEN);
+				}
+				Optional<Employee> emp = getEmployeeById(Long.parseLong(employeeDetailsReq.getId()));
 				if(emp.isPresent()) {
 					Employee employee = emp.get();
 					
-					if(authority.equals(Roles.ROLE_USER.name())) {
-						if(!loggedInUSerEmail.equals(employee.getEmail())) {
-							logger.debug(loggedInUSerEmail = " this user is trying to save or update another user record.");
-							return new ResponseEntity<Message>(new Message(loggedInUSerEmail = " this user is trying to save or update another user record."), HttpStatus.UNAUTHORIZED);
-						}
-					}
-					if(authority.equals(Roles.ROLE_MANAGER.name())) {
-						if(employee.getRoles().iterator().next().getRole().name().equals(Roles.ROLE_USER.name())) {
-							if(!loggedInUSerEmail.equals(employee.getManagerEmail())) {
-								logger.debug(loggedInUSerEmail = " this manager is trying to save or update another manager's employee record.");
-								return new ResponseEntity<Message>(new Message(loggedInUSerEmail = " this manager is trying to save or update another manager's employee record."), HttpStatus.UNAUTHORIZED);
-							}
-						}
-						else if(employee.getRoles().iterator().next().getRole().name().equals(Roles.ROLE_MANAGER.name())) {
-							if(!loggedInUSerEmail.equals(employee.getEmail())) {
-								logger.debug(loggedInUSerEmail = " this user is trying to save or update another user record.");
-								return new ResponseEntity<Message>(new Message(loggedInUSerEmail = " this user is trying to save or update another user record."), HttpStatus.UNAUTHORIZED);
-							}
-						}
-						
-					}
 					
 					try {
 						EmployeeDetails updatedEmpDetails = employee.getEmployeeDetails();
@@ -352,48 +344,18 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	@Override
 	public ResponseEntity<?> getEmployeeById(String id) throws Exception{
 		Optional<Employee> emp = Optional.empty();
-		String loggedInUSerEmail = Helper.loggedInUserEmailId();
-		String authority = Helper.loggedInUserAuthority();
+		boolean hasAccess = false;
 		
 		try {
 			if(id != null) {
-				emp = empRepo.findById(Long.parseLong(id));
-				if(emp.isPresent()) {
-					if(authority.equals(Roles.ROLE_USER.name())) {
-						if(!emp.get().getEmail().equals(loggedInUSerEmail)) {
-							return new ResponseEntity<Message>(new Message("You don't have permission to view this user's details"), HttpStatus.UNAUTHORIZED);
-						}
-					}
-					
-					else if(authority.equals(Roles.ROLE_MANAGER.name()) || authority.equals(Roles.ROLE_HR.name())) {
-						if(emp.get().getManagerEmail() != null) {
-							if(!emp.get().getManagerEmail().equals(loggedInUSerEmail)) {
-								return new ResponseEntity<Message>(new Message("You don't have permission to view this user's details"), HttpStatus.UNAUTHORIZED);
-							}
-						}
-						else {
-							if(!emp.get().getEmail().equals(loggedInUSerEmail)) {
-								return new ResponseEntity<Message>(new Message("You don't have permission to view this user's details"), HttpStatus.UNAUTHORIZED);
-							}
-						}
-						
-						if(authority.equals(Roles.ROLE_HR.name()) && 
-								emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_USER.name())) {
-							String managerOfUser = emp.get().getManagerEmail();
-							Optional<Employee> manager = empRepo.findByEmail(managerOfUser);
-							if(manager.isPresent()) {
-								if(manager.get().getManagerEmail() != null &&
-										!manager.get().getManagerEmail().equals(loggedInUSerEmail)) {
-									return new ResponseEntity<Message>(new Message("You don't have permission to view this user's details"), HttpStatus.UNAUTHORIZED);
-								}
-							}
-						}
-					}
+				hasAccess = isLoggedInUserHasAccessToThisEmployee(Long.parseLong(id), true);
+				if(!hasAccess) {
+					return new ResponseEntity<Message>(new Message("You don't have access to get another user's details."), HttpStatus.FORBIDDEN);
 				}
-				else {
+				emp = getEmployeeById(Long.parseLong(id));
+				if(emp.isEmpty()) {
 					return new ResponseEntity<Message>(new Message("User not found for id : " + id), HttpStatus.NOT_FOUND);
 				}
-				
 			}
 			else {
 				return new ResponseEntity<Message>(new Message("User Id should not be null"), HttpStatus.BAD_REQUEST);
@@ -417,57 +379,20 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	@Override
 	public ResponseEntity<?> deleteEmployeeById(String id) throws Exception{
 		Optional<Employee> emp = Optional.empty();
-		String loggedInUSerEmail = Helper.loggedInUserEmailId();
-		String authority = Helper.loggedInUserAuthority();
+		boolean hasAccess = false;
 		
 		try {
 			if(id != null) {
-				emp = empRepo.findById(Long.parseLong(id));
+				hasAccess = isLoggedInUserHasAccessToThisEmployee(Long.parseLong(id), false);
+				if(!hasAccess) {
+					return new ResponseEntity<Message>(new Message("You don't have access to delete this user."), HttpStatus.FORBIDDEN);
+				}
+				emp = getEmployeeById(Long.parseLong(id));
 				if(emp.isPresent()) {
-					if(authority.equals(Roles.ROLE_HR.name())) {
-						
-						if(emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_USER.name())) {
-							String managerOfUser = emp.get().getManagerEmail();
-							Optional<Employee> manager = empRepo.findByEmail(managerOfUser);
-							if(manager.isPresent()) {
-								if(manager.get().getManagerEmail() != null &&
-										!manager.get().getManagerEmail().equals(loggedInUSerEmail)) {
-									return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
-								}
-							}
-						}
-						else if(emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_MANAGER.name())) {
-							if(!emp.get().getManagerEmail().equals(loggedInUSerEmail)) {
-								return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
-							}
-							else {
-								Optional<List<Employee>> users = empRepo.findByReportTo(emp.get().getEmail());
-								if(users.isPresent() && users.get().size() > 0) {
-									return new ResponseEntity<Message>(new Message("You can't delete this employee. There are many employees under this employee."), HttpStatus.UNAUTHORIZED);
-								}
-							}
-						}
-						else if(emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_HR.name())) {
-							return new ResponseEntity<Message>(new Message("You don't have permission to delete this user."), HttpStatus.UNAUTHORIZED);
-						}
-						
+					Optional<List<Employee>> users = getAllEmployeesUnderReportToUser(emp.get().getEmail());
+					if(users.isPresent() && users.get().size() > 0) {
+						return new ResponseEntity<Message>(new Message("You can't delete this employee. There are many employees under this employee."), HttpStatus.UNAUTHORIZED);
 					}
-					
-					if(authority.equals(Roles.ROLE_ADMIN.name())) {
-						
-						if(emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_MANAGER.name()) ||
-								emp.get().getRoles().iterator().next().getRole().name().equals(Roles.ROLE_HR.name())) {
-							Optional<List<Employee>> users = empRepo.findByReportTo(emp.get().getEmail());
-							if(users.isPresent() && users.get().size() > 0) {
-								return new ResponseEntity<Message>(new Message("You can't delete this employee. There are many employees under this employee."), HttpStatus.UNAUTHORIZED);
-							}
-						}
-					}
-					
-					if(emp.get().getEmail().equals(loggedInUSerEmail)) {
-						return new ResponseEntity<Message>(new Message("You can't delete yourself."), HttpStatus.UNAUTHORIZED);
-					}
-					
 					
 					empRepo.deleteById(Long.parseLong(id));
 				}
@@ -494,7 +419,6 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	@Override
 	public ResponseEntity<?> getEmployeesByRole(String role) throws Exception{
 		Optional<List<Employee>> employees = Optional.empty();
-		String loggedInUSerEmail = Helper.loggedInUserEmailId();
 		String authority = Helper.loggedInUserAuthority();
 		
 		try {
@@ -503,12 +427,11 @@ public class EmployeeServiceImpl implements IEmployeeService{
 					//Getting all the users under an HR
 					if(role.equals(Roles.ROLE_USER.value)) {
 						try {
-							Optional<List<Employee>> managers = Optional.empty();
-							managers = empRepo.findByReportTo(loggedInUSerEmail);
+							Optional<List<Employee>> managers = getAllEmployeesUnderLoggedInUser();
 							if(managers.isPresent()) {
 								List<Employee> users = new ArrayList<Employee>();
 								for(Employee manager : managers.get()) {
-									Optional<List<Employee>> usersUnderManger = empRepo.findByReportTo(manager.getEmail());
+									Optional<List<Employee>> usersUnderManger = getAllEmployeesUnderReportToUser(manager.getEmail());
 									if(usersUnderManger.isPresent()) {
 										users.addAll(usersUnderManger.get());
 									}
@@ -523,7 +446,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 					else if(role.equals(Roles.ROLE_MANAGER.value)) {
 						try {
 							Optional<List<Employee>> managers = Optional.empty();
-							managers = empRepo.findByReportTo(loggedInUSerEmail);
+							managers = getAllEmployeesUnderLoggedInUser();
 							if(managers.isPresent()) {
 								employees = managers;
 							}
@@ -563,6 +486,43 @@ public class EmployeeServiceImpl implements IEmployeeService{
 		return new ResponseEntity<List<Employee>>(employees.get(), HttpStatus.OK);
 	}
 	
+	
+	@Override
+	public boolean isLoggedInUserHasAccessToThisEmployee(Long empId, boolean selfAccess) throws Exception {
+		String loggedInEmpRole = Helper.loggedInUserAuthority();
+		
+		Employee loggedInEmp = getLoggedInEmployeeDetails().get();
+		Employee requestedEmp = getEmployeeById(empId).get();
+		
+		if(loggedInEmp.equals(requestedEmp)) {
+			return selfAccess;
+		}
+		
+		if(!loggedInEmp.equals(requestedEmp)) {
+			if(loggedInEmpRole.equals(Roles.ROLE_MANAGER.name())) {
+				//In this position, the requested employee must be an USER role
+				if(!requestedEmp.getManagerEmail().equals(loggedInEmp.getEmail())) {
+					return false;
+				}
+			}
+			if(loggedInEmpRole.equals(Roles.ROLE_HR.name())) {
+				//In this position, the requested employee must be an MANAGER role
+				if(!requestedEmp.getManagerEmail().equals(loggedInEmp.getEmail())) {
+					//In this position, the requested employee must be an USER role
+					Employee employee = getEmployeeByEmail(requestedEmp.getManagerEmail()).get();
+					if(employee.getManagerEmail().equals(loggedInEmp.getEmail())) {
+						return false;
+					}
+				}
+			}
+			if(loggedInEmpRole.equals(Roles.ROLE_USER.name())) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
 	@Override
 	public Optional<Employee> getLoggedInEmployeeDetails() throws Exception{
 		String loggedInUserEmail = Helper.loggedInUserEmailId();
@@ -573,19 +533,6 @@ public class EmployeeServiceImpl implements IEmployeeService{
 			throw new Exception(ex);
 		}
 	}
-	
-	@Override
-	public Optional<Employee> getLoggedInUserDetails() throws Exception{
-		String loggedInUserEmail = Helper.loggedInUserEmailId();
-		try {
-			return empRepo.findByEmail(loggedInUserEmail);
-		}catch(Exception ex) {
-			logger.debug("Error : Exception occor from getLoggedInUserDetails method.");
-			throw new Exception(ex);
-		}
-	}
-	
-	
 	
 	@Override
 	public Optional<List<Employee>> getAllEmployeesUnderLoggedInUser() throws Exception {
@@ -613,6 +560,17 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	public Optional<List<Long>> getAllEmployeesIdUnderReportToUser(String reportToUserEmail) throws Exception {
 		try {
 			return empRepo.findAllEmployeeIdByReportTo(reportToUserEmail);
+		}catch(Exception ex) {
+			logger.debug("Error : Exception occor from getAllEmployeeIdUnderReportToUser method.");
+			throw new Exception(ex);
+		}
+	}
+	
+	
+	@Override
+	public Optional<List<Employee>> getAllEmployeesUnderReportToUser(String reportToUserEmail) throws Exception {
+		try {
+			return empRepo.findByReportTo(reportToUserEmail);
 		}catch(Exception ex) {
 			logger.debug("Error : Exception occor from getAllEmployeeIdUnderReportToUser method.");
 			throw new Exception(ex);
