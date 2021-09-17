@@ -21,7 +21,6 @@ import com.management.employee.enums.LeaveStatus;
 import com.management.employee.enums.LeaveType;
 import com.management.employee.enums.Roles;
 import com.management.employee.payload.LeaveDetailsRequest;
-import com.management.employee.payload.LeaveRequest;
 import com.management.employee.payload.Message;
 import com.management.employee.repository.LeaveCountDetailsRepository;
 import com.management.employee.repository.LeaveRequestRecordRepository;
@@ -165,37 +164,31 @@ public class LeaveServiceImpl implements ILeaveService {
 	
 	@Transactional
 	@Override
-	public ResponseEntity<?> requestForLeave(LeaveRequest leaveReq) throws Exception{
+	public ResponseEntity<?> requestForLeave(LeaveRequestRecord leaveReq) throws Exception{
 		LeaveRequestRecord leaveRecord = null;
 		int totalLeaveDays = 0;
 		Optional<Employee> emp = Optional.empty();
 		
 		try {
-			if(leaveReq.getEmployeeId() != null) {
-				emp = employeeService.getEmployeeById(Long.parseLong(leaveReq.getEmployeeId()));
-			}
-			else {
-				emp = employeeService.getLoggedInUserDetails();
-			}
+			emp = employeeService.getLoggedInEmployeeDetails();
 			
-			emp = employeeService.getEmployeeById(Long.parseLong(leaveReq.getEmployeeId()));
 			if(emp.isPresent()) {
 				Optional<LeaveCountDetails> leaveCountDetails = leaveCountDetailsRepo.findByEmployeeId(emp.get().getId());
 				
 				if(leaveCountDetails.isPresent()) {
 					//Leave request FROM date must be less than TO date
-					if(leaveReq.getLeaveRecord().getFromDate().before(leaveReq.getLeaveRecord().getToDate())) {
+					if(leaveReq.getFromDate().before(leaveReq.getToDate())) {
 						totalLeaveDays = Helper.getTotalLeavesByCalculatingFromDateToDate(
-								leaveReq.getLeaveRecord().getFromDate(), 
-								leaveReq.getLeaveRecord().getToDate());
+								leaveReq.getFromDate(), 
+								leaveReq.getToDate());
 						
 						leaveRecord = new LeaveRequestRecord(emp.get(), 
-								leaveReq.getLeaveRecord().getFromDate(),
-								leaveReq.getLeaveRecord().getToDate(),
-								leaveReq.getLeaveRecord().getLeaveReason(),
+								leaveReq.getFromDate(),
+								leaveReq.getToDate(),
+								leaveReq.getLeaveReason(),
 								totalLeaveDays,
 								LeaveStatus.REQUESTED,
-								leaveReq.getLeaveRecord().getLeaveType(),
+								leaveReq.getLeaveType(),
 								new Date(), null, null);
 						
 						leaveRequestRecordRepo.save(leaveRecord);
@@ -211,7 +204,7 @@ public class LeaveServiceImpl implements ILeaveService {
 				}
 			}
 			else {
-				return new ResponseEntity<Message>(new Message("No employee found for id : " + leaveReq.getEmployeeId()), HttpStatus.NOT_FOUND);
+				return new ResponseEntity<Message>(new Message("No employee found for id : " + emp.get().getId()), HttpStatus.NOT_FOUND);
 			}
 				
 		}catch(IllegalArgumentException ex) {
@@ -229,34 +222,29 @@ public class LeaveServiceImpl implements ILeaveService {
 	
 	@Transactional
 	@Override
-	public ResponseEntity<?> updateLeaveRequestRecord(LeaveRequest leaveRequest) throws Exception{
+	public ResponseEntity<?> updateLeaveRequestRecord(LeaveRequestRecord leaveRequest) throws Exception{
 		LeaveRequestRecord leaveRecord = null;
 		int totalLeaveDays = 0;
 		Optional<Employee> emp = Optional.empty();
 		
 		try {
-			if(leaveRequest.getEmployeeId() != null) {
-				emp = employeeService.getEmployeeById(Long.parseLong(leaveRequest.getEmployeeId()));
-			}
-			else {
-				emp = employeeService.getLoggedInUserDetails();
-			}
+			emp = employeeService.getLoggedInEmployeeDetails();
 			
-			Optional<LeaveRequestRecord> levRd = leaveRequestRecordRepo.findByIdAndEmployeeId(leaveRequest.getLeaveRecord().getId(), emp.get().getId());
+			Optional<LeaveRequestRecord> levRd = leaveRequestRecordRepo.findByIdAndEmployeeId(leaveRequest.getId(), emp.get().getId());
 			if(levRd.isPresent()) {
 				if(!levRd.get().getLeaveStatus().value.equals(LeaveStatus.ACCEPTED.value) ||
 						!levRd.get().getLeaveStatus().value.equals(LeaveStatus.REJECTED.value)) {
 					
-					if(leaveRequest.getLeaveRecord().getFromDate().before(leaveRequest.getLeaveRecord().getToDate())) {
+					if(leaveRequest.getFromDate().before(leaveRequest.getToDate())) {
 						totalLeaveDays = Helper.getTotalLeavesByCalculatingFromDateToDate(
-								leaveRequest.getLeaveRecord().getFromDate(),
-								leaveRequest.getLeaveRecord().getToDate());
+								leaveRequest.getFromDate(),
+								leaveRequest.getToDate());
 						
 						leaveRecord = levRd.get();
-						leaveRecord.setFromDate(leaveRequest.getLeaveRecord().getFromDate());
-						leaveRecord.setToDate(leaveRequest.getLeaveRecord().getToDate());
-						leaveRecord.setLeaveReason(leaveRequest.getLeaveRecord().getLeaveReason());
-						leaveRecord.setLeaveType(leaveRequest.getLeaveRecord().getLeaveType());
+						leaveRecord.setFromDate(leaveRequest.getFromDate());
+						leaveRecord.setToDate(leaveRequest.getToDate());
+						leaveRecord.setLeaveReason(leaveRequest.getLeaveReason());
+						leaveRecord.setLeaveType(leaveRequest.getLeaveType());
 						leaveRecord.setTotalLeaveDays(totalLeaveDays);
 						
 						leaveRequestRecordRepo.save(leaveRecord);
@@ -273,7 +261,7 @@ public class LeaveServiceImpl implements ILeaveService {
 				}
 			}
 			else {
-				return new ResponseEntity<Message>(new Message("No leave record found for id : " + leaveRequest.getLeaveRecord().getId()), HttpStatus.NOT_FOUND);
+				return new ResponseEntity<Message>(new Message("No leave record found for id : " + leaveRequest.getId()), HttpStatus.NOT_FOUND);
 			}
 			
 		}catch(IllegalArgumentException ex) {
@@ -461,65 +449,22 @@ public class LeaveServiceImpl implements ILeaveService {
 	
 	@Override
 	public ResponseEntity<?> getLeaveRequestRecordById(String id) throws Exception{
-		String loggedInUSerEmail = Helper.loggedInUserEmailId();
-		String authority = Helper.loggedInUserAuthority();
 		Optional<LeaveRequestRecord> leaveReqRecord = Optional.empty();
+		boolean hasAccess = false;
 		
 		try {
-			//Get the loggedin employee details
-			Optional<Employee> employee = employeeService.getLoggedInEmployeeDetails();
-			if(employee.isPresent()) {
-				//Get the leave request record by id
-				leaveReqRecord = leaveRequestRecordRepo.findById(Integer.parseInt(id));
-				if(leaveReqRecord.isPresent()) {
-					Long leaveRequestedEmployeeId = leaveReqRecord.get().getEmployee().getId();
-					
-					if(leaveRequestedEmployeeId != employee.get().getId()) {
-						
-						if(authority.equals(Roles.ROLE_MANAGER.name())) {
-							//If leave Request is not managers leave then fetch user with id from leave request
-							Optional<Employee> employee1 = employeeService.getEmployeeById(leaveRequestedEmployeeId);
-							if(employee1.isPresent()) {
-								//Check user is reporting to logged in users or not
-								if(!employee1.get().getManagerEmail().equals(loggedInUSerEmail)) {
-									return new ResponseEntity<Message>(new Message("You don't have permission to view this user's leave request details."), HttpStatus.FORBIDDEN);
-								}
-							}
-							else {
-								return new ResponseEntity<Message>(new Message("No employee found for id : " + leaveRequestedEmployeeId), HttpStatus.NOT_FOUND);
-							}
-						}
-						else if(authority.equals(Roles.ROLE_HR.name())) {
-							//If leave Request is not HR's leave then fetch user with id from leave request
-							Optional<Employee> employee1 = employeeService.getEmployeeById(leaveRequestedEmployeeId);
-							if(employee1.isPresent()) {
-								//Check user is reporting to logged in users or not
-								if(!employee1.get().getManagerEmail().equals(loggedInUSerEmail)) {
-									//Assuming the leave request is for role user. So fetching managers details who may report to HR
-									Optional<Employee> employee2 = employeeService.getEmployeeByEmail(employee.get().getManagerEmail());
-									if(employee2.isPresent()) {
-										//Check user is reporting to logged in users or not
-										if(!employee1.get().getManagerEmail().equals(loggedInUSerEmail)) {
-											return new ResponseEntity<Message>(new Message("You don't have permission to view this user's leave request details."), HttpStatus.FORBIDDEN);
-										}
-									}
-								}
-							}
-						}
-						else if(authority.equals(Roles.ROLE_USER.name())) {
-							return new ResponseEntity<Message>(new Message("You don't have permission to view this user's leave request details."), HttpStatus.FORBIDDEN);
-						}
-						
-					}					
-				}
-				else {
-					return new ResponseEntity<Message>(new Message("No Leave request record found for id : " + id), HttpStatus.NOT_FOUND);
+			leaveReqRecord = leaveRequestRecordRepo.findById(Integer.parseInt(id));
+			if(leaveReqRecord.isPresent()) {
+				Long leaveRequestedEmployeeId = leaveReqRecord.get().getEmployee().getId();
+				hasAccess = employeeService.isLoggedInUserHasAccessToThisEmployee(leaveRequestedEmployeeId, true);
+				if(!hasAccess) {
+					return new ResponseEntity<Message>(new Message("You don't have permission to view this user's leave request details."), HttpStatus.FORBIDDEN);
 				}
 			}
 			else {
-				return new ResponseEntity<Message>(new Message("No employee found for email : " + loggedInUSerEmail), HttpStatus.NOT_FOUND);
+				return new ResponseEntity<Message>(new Message("No Leave request record found for id : " + id), HttpStatus.NOT_FOUND);
 			}
-
+			
 		}catch(Exception ex) {
 			logger.debug("ERROR : On fetch leave request record from method getLeaveRequestRecordById");
 			logger.debug("ERROR : Error message is : " + ex.getMessage());
@@ -534,39 +479,14 @@ public class LeaveServiceImpl implements ILeaveService {
 	@Override
 	public ResponseEntity<?> leaveApproveOrRejectAction(String action, LeaveRequestRecord leaveReq) throws Exception{
 		String loggedInUSerEmail = Helper.loggedInUserEmailId();
-		String authority = Helper.loggedInUserAuthority();
+		boolean hasAccess = false;
 		
 		try {
 			Long employeeId = leaveReq.getEmployee().getId();
-			Optional<Employee> requestedEmp = employeeService.getEmployeeById(employeeId);
-			if(requestedEmp.isPresent()) {
-				if(authority.equals(Roles.ROLE_USER.name()) ||
-						requestedEmp.get().getEmail().equals(loggedInUSerEmail)) {
-					return new ResponseEntity<Message>(new Message("You don't have permission for this action."), HttpStatus.FORBIDDEN);
-				}
-				else if(authority.equals(Roles.ROLE_MANAGER.name())) {
-					if(!requestedEmp.get().getManagerEmail().equals(loggedInUSerEmail)) {
-						return new ResponseEntity<Message>(new Message("You don't have permission for this user."), HttpStatus.FORBIDDEN);
-					}
-				}
-				else if(authority.equals(Roles.ROLE_HR.name())) {
-					if(!requestedEmp.get().getManagerEmail().equals(loggedInUSerEmail)) {
-						Optional<Employee> employee1 = employeeService.getEmployeeByEmail(requestedEmp.get().getManagerEmail());
-						if(employee1.isPresent()) {
-							if(!employee1.get().getManagerEmail().equals(loggedInUSerEmail)) {
-								return new ResponseEntity<Message>(new Message("You don't have permission for this user."), HttpStatus.FORBIDDEN);
-							}
-						}
-						else {
-							return new ResponseEntity<Message>(new Message("No employee found for email : " + requestedEmp.get().getManagerEmail()), HttpStatus.NOT_FOUND);
-						}
-					}
-				}
+			hasAccess = employeeService.isLoggedInUserHasAccessToThisEmployee(employeeId, false);
+			if(!hasAccess) {
+				return new ResponseEntity<Message>(new Message("You don't have permission to take action on this leave request."), HttpStatus.FORBIDDEN);
 			}
-			else {
-				return new ResponseEntity<Message>(new Message("No employee found for id : " + employeeId), HttpStatus.NOT_FOUND);
-			}
-			
 			
 			if(leaveReq.getLeaveStatus().equals(LeaveStatus.REQUESTED.name())) {
 				if(action.equals(LeaveStatus.REJECTED.name())) {
