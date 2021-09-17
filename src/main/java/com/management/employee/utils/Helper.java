@@ -28,15 +28,10 @@ public class Helper {
 	
 	public static int getTotalLeavesByCalculatingFromDateToDate(Date fromDay, Date toDay) {
 		int totalLeaveDays = 0;
-		try {
-			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-			Date fromDate = sdf.parse(fromDay.toString());
-			Date toDate = sdf.parse(toDay.toString());
-			totalLeaveDays = (int) ((Math.abs(toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) % 365);
-		}catch (ParseException ex) {
-			logger.debug("ERROR : Parse exception from requestForLeave method : " + ex.getMessage());
-            ex.printStackTrace();
-        }
+		//			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+//			Date fromDate = sdf.parse(fromDay.toString());
+//			Date toDate = sdf.parse(toDay.toString());
+		totalLeaveDays = (int) ((Math.abs(toDay.getTime() - fromDay.getTime()) / (1000 * 60 * 60 * 24)) % 365) + 1;
 		
 		return totalLeaveDays;
 		

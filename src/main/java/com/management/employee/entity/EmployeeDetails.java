@@ -6,6 +6,8 @@ import java.util.Date;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -66,6 +68,7 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 	@Column(name = "zip", length = 10)
 	private String zip;
 	
+	@Enumerated(EnumType.STRING)
 	@Column(name = "gender", length = 10)
 	private Gender gender;
 	

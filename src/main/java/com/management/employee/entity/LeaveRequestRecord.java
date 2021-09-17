@@ -6,6 +6,8 @@ import java.util.Date;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -55,9 +57,11 @@ public class LeaveRequestRecord extends Auditable<String> implements Serializabl
 	@Column(name = "leave_reason", length = 500)
 	private String leaveReason;
 	
+	@Enumerated(EnumType.STRING)
 	@Column(name = "leave_status", nullable = false)
 	private LeaveStatus leaveStatus;
 	
+	@Enumerated(EnumType.STRING)
 	@Column(name = "leave_type", nullable = false)
 	private LeaveType leaveType;
 	
@@ -196,7 +200,7 @@ public class LeaveRequestRecord extends Auditable<String> implements Serializabl
 
 	@Override
 	public String toString() {
-		return "LeaveRecord [id=" + id + ", employee=" + employee + ", fromDate=" + fromDate + ", toDate=" + toDate
+		return "LeaveRecord [id=" + id + ", employeeId=" + employee.getId() + ", fromDate=" + fromDate + ", toDate=" + toDate
 				+ ", totalLeaveDays=" + totalLeaveDays + ", leaveReason=" + leaveReason + ", leaveStatus=" + leaveStatus
 				+ ", leaveType=" + leaveType + ", requestDate=" + requestDate + ", responseDate=" + responseDate
 				+ ", deleted=" + deleted + "]";

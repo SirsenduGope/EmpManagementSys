@@ -177,7 +177,8 @@ public class LeaveServiceImpl implements ILeaveService {
 				
 				if(leaveCountDetails.isPresent()) {
 					//Leave request FROM date must be less than TO date
-					if(leaveReq.getFromDate().before(leaveReq.getToDate())) {
+					if(leaveReq.getFromDate().after(new Date()) && leaveReq.getToDate().after(new Date()) &&
+							leaveReq.getFromDate().before(leaveReq.getToDate())) {
 						totalLeaveDays = Helper.getTotalLeavesByCalculatingFromDateToDate(
 								leaveReq.getFromDate(), 
 								leaveReq.getToDate());
@@ -187,7 +188,7 @@ public class LeaveServiceImpl implements ILeaveService {
 								leaveReq.getToDate(),
 								leaveReq.getLeaveReason(),
 								totalLeaveDays,
-								LeaveStatus.REQUESTED,
+								LeaveStatus.REQUESTED.name(),
 								leaveReq.getLeaveType(),
 								new Date(), null, null);
 						
@@ -195,7 +196,7 @@ public class LeaveServiceImpl implements ILeaveService {
 						
 					}
 					else {
-						return new ResponseEntity<Message>(new Message("Leave FROM date must be less than TO date"), HttpStatus.BAD_REQUEST);
+						return new ResponseEntity<Message>(new Message("Leave FROM date must be less than TO date and Both date should be bigger than today"), HttpStatus.BAD_REQUEST);
 					}
 				}
 				else {
@@ -232,8 +233,8 @@ public class LeaveServiceImpl implements ILeaveService {
 			
 			Optional<LeaveRequestRecord> levRd = leaveRequestRecordRepo.findByIdAndEmployeeId(leaveRequest.getId(), emp.get().getId());
 			if(levRd.isPresent()) {
-				if(!levRd.get().getLeaveStatus().value.equals(LeaveStatus.ACCEPTED.value) ||
-						!levRd.get().getLeaveStatus().value.equals(LeaveStatus.REJECTED.value)) {
+				if(!levRd.get().getLeaveStatus().equals(LeaveStatus.ACCEPTED.name()) ||
+						!levRd.get().getLeaveStatus().equals(LeaveStatus.REJECTED.name())) {
 					
 					if(leaveRequest.getFromDate().before(leaveRequest.getToDate())) {
 						totalLeaveDays = Helper.getTotalLeavesByCalculatingFromDateToDate(
@@ -490,7 +491,7 @@ public class LeaveServiceImpl implements ILeaveService {
 			
 			if(leaveReq.getLeaveStatus().equals(LeaveStatus.REQUESTED.name())) {
 				if(action.equals(LeaveStatus.REJECTED.name())) {
-					leaveReq.setLeaveStatus(LeaveStatus.REJECTED);
+					leaveReq.setLeaveStatus(LeaveStatus.REJECTED.name());
 					leaveReq.setResponseDate(new Date());
 					leaveReq.setActionTakenBy(loggedInUSerEmail);
 					
@@ -498,7 +499,7 @@ public class LeaveServiceImpl implements ILeaveService {
 				}
 				
 				if(leaveReq.getLeaveStatus().equals(LeaveStatus.ACCEPTED.name())) {
-					leaveReq.setLeaveStatus(LeaveStatus.ACCEPTED);
+					leaveReq.setLeaveStatus(LeaveStatus.ACCEPTED.name());
 					leaveReq.setResponseDate(new Date());
 					leaveReq.setActionTakenBy(loggedInUSerEmail);
 					
