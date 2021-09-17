@@ -27,37 +27,37 @@ public class LeaveSettings extends Auditable<String> implements Serializable {
 	@Column(name = "id", unique = true, nullable = false)
 	private Integer id;
 	
-	@Column(name = "casual_leave_count")
+	@Column(name = "casual_leave_count", columnDefinition = "double default 0")
 	private Double casualLeaveCount = 0d;
 	
-	@Column(name = "sick_leave_count")
+	@Column(name = "sick_leave_count", columnDefinition = "double default 0")
 	private Double sickLeaveCount = 0d;
 	
-	@Column(name = "earn_leave_count")
+	@Column(name = "earn_leave_count", columnDefinition = "double default 0")
 	private Double earnLeaveCount = 0d;
 	
-	@Column(name = "casual_leave_MN")
+	@Column(name = "casual_leave_MN", columnDefinition = "bit(1) default b'0'")
 	private boolean casualLeaveMonthly = Boolean.FALSE;
 	
-	@Column(name = "sick_leave_MN")
+	@Column(name = "sick_leave_MN", columnDefinition = "bit(1) default b'1'")
 	private boolean sickLeaveMonthly = Boolean.TRUE;
 	
-	@Column(name = "earn_leave_MN")
+	@Column(name = "earn_leave_MN", columnDefinition = "bit(1) default b'1'")
 	private boolean earnLeaveMonthly = Boolean.TRUE;
 	
-	@Column(name = "casual_leave_CF")
+	@Column(name = "casual_leave_CF", columnDefinition = "bit(1) default b'0'")
 	private boolean casualLeaveCarryFwd = Boolean.FALSE;
 	
-	@Column(name = "sick_leave_CF")
+	@Column(name = "sick_leave_CF", columnDefinition = "bit(1) default b'0'")
 	private boolean sickLeaveCarryFwd = Boolean.FALSE;
 	
-	@Column(name = "earn_leave_CF")
+	@Column(name = "earn_leave_CF", columnDefinition = "bit(1) default b'1'")
 	private boolean earnLeaveCarryFwd = Boolean.TRUE;
 	
-	@Column(name = "sat_working_day")
+	@Column(name = "sat_working_day", columnDefinition = "bit(1) default b'0'")
 	private boolean saturdayWorkingDay = Boolean.FALSE;
 	
-	@Column(name = "sun_working_day")
+	@Column(name = "sun_working_day", columnDefinition = "bit(1) default b'0'")
 	private boolean sundayWorkingDay = Boolean.FALSE;
 	
 	@JsonIgnore

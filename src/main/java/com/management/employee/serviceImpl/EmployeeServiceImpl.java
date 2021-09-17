@@ -11,6 +11,7 @@ import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +23,7 @@ import com.management.employee.entity.Employee;
 import com.management.employee.entity.EmployeeDetails;
 import com.management.employee.entity.EmployeeStatus;
 import com.management.employee.entity.Role;
+import com.management.employee.enums.Gender;
 import com.management.employee.enums.Roles;
 import com.management.employee.payload.EmployeeDetailsRequest;
 import com.management.employee.payload.Message;
@@ -53,7 +55,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 			final IDesignationService designationService,
 			final IEmployeeStatusService employeeStatusService,
 			final RoleRepository roleRepository,
-			final ILeaveService leaveService) {
+			@Lazy final ILeaveService leaveService) {
 		this.empRepo = empRepo;
 		this.encoder = encoder;
 		this.designationService = designationService;
@@ -128,7 +130,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	@Transactional
 	@Override
 	public ResponseEntity<?> createNewEmployee(@RequestBody SignupRequest signupRequest) throws Exception {
-		
+		String loggedInUserEmail = Helper.loggedInUserEmailId();
 		String authority = Helper.loggedInUserAuthority();
 		
 		Employee newEmployee = null;
@@ -152,17 +154,15 @@ public class EmployeeServiceImpl implements IEmployeeService{
 			
 			newEmployee.setEmployeeDetails(newEmpDetails);
 			
-			if(authority.equals(Roles.ROLE_MANAGER.value)) {
+			if(authority.equals(Roles.ROLE_MANAGER.name())) {
 				Role userRole = roleRepository.findByRole(Roles.ROLE_USER)
 						.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
 				roles.add(userRole);
 				
-				Optional<Employee> reportTo = getLoggedInEmployeeDetails();
-				
 				newEmployee.setRoles(roles);
-				newEmployee.setManagerEmail(reportTo.get().getEmail());
+				newEmployee.setManagerEmail(loggedInUserEmail);
 			}
-			else if(authority.equals(Roles.ROLE_HR.value)) {
+			else if(authority.equals(Roles.ROLE_HR.name())) {
 				if(signupRequest.getRole().size() > 0) {
 					String role = signupRequest.getRole().toArray()[0].toString();
 					Optional<Role> newUserrole = roleRepository.findByName(Roles.get(role).name());
@@ -170,22 +170,26 @@ public class EmployeeServiceImpl implements IEmployeeService{
 						roles.add(newUserrole.get());
 						newEmployee.setRoles(roles);
 					}
-					if(role.equals(Roles.ROLE_MANAGER.name())) {
-						Optional<Employee> reportTo = getLoggedInEmployeeDetails();
-						newEmployee.setManagerEmail(reportTo.get().getEmail());
+					if(role.equals(Roles.ROLE_MANAGER.value)) {
+						newEmployee.setManagerEmail(loggedInUserEmail);
 					}
-					if(role.equals(Roles.ROLE_USER.name())) {
+					if(role.equals(Roles.ROLE_USER.value)) {
 						String managerId = signupRequest.getReportTo();
 						if(managerId != null) {
 							Optional<Employee> manager = getEmployeeByEmail(managerId);
 							if(manager.isPresent()) {
 								newEmployee.setManagerEmail(manager.get().getEmail());
 							}
+							else {
+								return new ResponseEntity<Message>(new Message("No reporting user is found with email id : " + signupRequest.getReportTo()), HttpStatus.BAD_REQUEST);
+							}
+						}else {
+							return new ResponseEntity<Message>(new Message("No reporting user is found with email id : " + signupRequest.getReportTo()), HttpStatus.BAD_REQUEST);
 						}
 					}
 				}
 				else {
-					throw new NotFoundException("Role is not found");
+					return new ResponseEntity<Message>(new Message("Role is not found"), HttpStatus.BAD_REQUEST);
 				}
 				
 			}
@@ -202,6 +206,9 @@ public class EmployeeServiceImpl implements IEmployeeService{
 						if(manager.isPresent()) {
 							newEmployee.setManagerEmail(manager.get().getEmail());
 						}
+					}
+					else {
+						newEmployee.setManagerEmail(loggedInUserEmail);
 					}
 				}
 			}
@@ -272,10 +279,20 @@ public class EmployeeServiceImpl implements IEmployeeService{
 						updatedEmpDetails.setAddress(employeeDetailsReq.getEmployeeDetails().getAddress());
 						updatedEmpDetails.setState(employeeDetailsReq.getEmployeeDetails().getState());
 						updatedEmpDetails.setCity(employeeDetailsReq.getEmployeeDetails().getCity());
-						updatedEmpDetails.setGender(employeeDetailsReq.getEmployeeDetails().getGender());
 						updatedEmpDetails.setZip(employeeDetailsReq.getEmployeeDetails().getZip());
 						updatedEmpDetails.setDateOfBirth(employeeDetailsReq.getEmployeeDetails().getDateOfBirth());
 						updatedEmpDetails.setDateOfJoining(employeeDetailsReq.getEmployeeDetails().getDateOfJoining());
+						
+						if(employeeDetailsReq.getEmployeeDetails().getGender().toString().equals(Gender.MALE.name())) {
+							updatedEmpDetails.setGender(Gender.MALE);
+						}
+						else if(employeeDetailsReq.getEmployeeDetails().getGender().toString().equals(Gender.FEMALE.name())) {
+							updatedEmpDetails.setGender(Gender.FEMALE);
+						}
+						else {
+							updatedEmpDetails.setGender(Gender.OTHERS);
+						}
+						
 						
 						if(employeeDetailsReq.getDesignation() != null) {
 							try{
@@ -490,33 +507,39 @@ public class EmployeeServiceImpl implements IEmployeeService{
 	@Override
 	public boolean isLoggedInUserHasAccessToThisEmployee(Long empId, boolean selfAccess) throws Exception {
 		String loggedInEmpRole = Helper.loggedInUserAuthority();
+		String loggedInEmpEmail = Helper.loggedInUserEmailId();
 		
-		Employee loggedInEmp = getLoggedInEmployeeDetails().get();
-		Employee requestedEmp = getEmployeeById(empId).get();
-		
-		if(loggedInEmp.equals(requestedEmp)) {
-			return selfAccess;
-		}
-		
-		if(!loggedInEmp.equals(requestedEmp)) {
-			if(loggedInEmpRole.equals(Roles.ROLE_MANAGER.name())) {
-				//In this position, the requested employee must be an USER role
-				if(!requestedEmp.getManagerEmail().equals(loggedInEmp.getEmail())) {
-					return false;
-				}
+		if(empId != null) {
+			Optional<Employee> emp = getEmployeeById(empId);
+			if(emp.isEmpty()) {
+				logger.debug("User not found for id : " + empId);
 			}
-			if(loggedInEmpRole.equals(Roles.ROLE_HR.name())) {
-				//In this position, the requested employee must be an MANAGER role
-				if(!requestedEmp.getManagerEmail().equals(loggedInEmp.getEmail())) {
+			
+			Employee requestedEmp = emp.get();
+			
+			if(loggedInEmpEmail.equals(requestedEmp.getEmail())) {
+				return selfAccess;
+			}
+			else {
+				if(loggedInEmpRole.equals(Roles.ROLE_MANAGER.name())) {
 					//In this position, the requested employee must be an USER role
-					Employee employee = getEmployeeByEmail(requestedEmp.getManagerEmail()).get();
-					if(employee.getManagerEmail().equals(loggedInEmp.getEmail())) {
+					if(!requestedEmp.getManagerEmail().equals(loggedInEmpEmail)) {
 						return false;
 					}
 				}
-			}
-			if(loggedInEmpRole.equals(Roles.ROLE_USER.name())) {
-				return false;
+				if(loggedInEmpRole.equals(Roles.ROLE_HR.name())) {
+					//In this position, the requested employee must be an MANAGER role
+					if(!requestedEmp.getManagerEmail().equals(loggedInEmpEmail)) {
+						//In this position, the requested employee must be an USER role
+						Employee employee = getEmployeeByEmail(requestedEmp.getManagerEmail()).get();
+						if(!employee.getManagerEmail().equals(loggedInEmpEmail)) {
+							return false;
+						}
+					}
+				}
+				if(loggedInEmpRole.equals(Roles.ROLE_USER.name())) {
+					return false;
+				}
 			}
 		}
 		

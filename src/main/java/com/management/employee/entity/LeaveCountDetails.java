@@ -37,31 +37,31 @@ public class LeaveCountDetails extends Auditable<String> implements Serializable
 	@JsonIgnoreProperties(value = {"leave_details", "hibernateLazyInitializer"})
 	private Employee employee;
 	
-	@Column(name = "total_casual_leave")
+	@Column(name = "total_casual_leave", columnDefinition = "double default 0")
 	private Double noOfCasualLeave = 0d;
 	
-	@Column(name = "remaining_casual_leave")
+	@Column(name = "remaining_casual_leave", columnDefinition = "double default 0")
 	private Double remainingCasualLeave = 0d;
 	
-	@Column(name = "total_sick_leave")
+	@Column(name = "total_sick_leave", columnDefinition = "double default 0")
 	private Double noOfSickLeave = 0d;
 	
-	@Column(name = "remaining_sick_leave")
+	@Column(name = "remaining_sick_leave", columnDefinition = "double default 0")
 	private Double remainingSickLeave = 0d;
 	
-	@Column(name = "total_earn_leave")
+	@Column(name = "total_earn_leave", columnDefinition = "double default 0")
 	private Double noOfEarnLeave = 0d;
 	
-	@Column(name = "remaining_earn_leave")
+	@Column(name = "remaining_earn_leave", columnDefinition = "double default 0")
 	private Double remainingEarnLeave = 0d;
 	
-	@Column(name = "total_leaves")
+	@Column(name = "total_leaves", columnDefinition = "double default 0")
 	private Double totalLeaves = 0d;
 	
-	@Column(name = "remaining_leaves")
+	@Column(name = "remaining_leaves", columnDefinition = "double default 0")
 	private Double remainingLeaves = 0d;
 	
-	@Column(name = "total_lop")
+	@Column(name = "total_lop", columnDefinition = "int default 0")
 	private Integer totalLOP = 0;
 	
 	@JsonIgnore

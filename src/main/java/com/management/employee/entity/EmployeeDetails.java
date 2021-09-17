@@ -1,7 +1,7 @@
 package com.management.employee.entity;
 
 import java.io.Serializable;
-import java.sql.Date;
+import java.util.Date;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -18,6 +18,7 @@ import javax.persistence.Table;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.management.employee.enums.Gender;
@@ -68,9 +69,11 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 	@Column(name = "gender", length = 10)
 	private Gender gender;
 	
+	@JsonFormat(pattern="dd/MM/yyyy")
 	@Column(name = "date_of_joining")
 	private Date dateOfJoining;
 	
+	@JsonFormat(pattern="dd/MM/yyyy")
 	@Column(name = "date_of_birth")
 	private Date dateOfBirth;
 	

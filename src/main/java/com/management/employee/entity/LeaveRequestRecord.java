@@ -17,6 +17,7 @@ import javax.persistence.Table;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.management.employee.enums.LeaveStatus;
@@ -40,9 +41,11 @@ public class LeaveRequestRecord extends Auditable<String> implements Serializabl
 	@JsonIgnoreProperties(value = {"leave_record", "hibernateLazyInitializer"})
 	private Employee employee;
 	
+	@JsonFormat(pattern="dd/MM/yyyy")
 	@Column(name = "from_date", nullable = false)
 	private Date fromDate;
 	
+	@JsonFormat(pattern="dd/MM/yyyy")
 	@Column(name = "to_date", nullable = false)
 	private Date toDate;
 	
