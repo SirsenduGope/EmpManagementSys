@@ -79,12 +79,12 @@ public class LeaveController {
 	
 	
 	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER')")
-	@RequestMapping(value = "/", method = RequestMethod.PUT)
+	@RequestMapping(value = "/{id}", method = RequestMethod.PUT)
 	public ResponseEntity<?> actionOnLeaveRequest(
-			@RequestParam(value = "action", required = true) String acction,
-			@RequestBody LeaveRequestActionPayload leaveRequest) throws Exception{
+			@RequestParam(value = "action", required = true) String action,
+			@PathVariable("id") String id) throws Exception{
 
-		return leaveService.leaveApproveOrRejectAction(acction, leaveRequest);
+		return leaveService.leaveApproveOrRejectAction(action, id);
 	}
 	
 	

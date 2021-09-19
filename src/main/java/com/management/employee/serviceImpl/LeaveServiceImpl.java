@@ -21,7 +21,6 @@ import com.management.employee.enums.LeaveStatus;
 import com.management.employee.enums.LeaveType;
 import com.management.employee.enums.Roles;
 import com.management.employee.payload.LeaveDetailsRequest;
-import com.management.employee.payload.LeaveRequestActionPayload;
 import com.management.employee.payload.LeaveRequestRecordPayload;
 import com.management.employee.payload.Message;
 import com.management.employee.repository.LeaveCountDetailsRepository;
@@ -482,20 +481,18 @@ public class LeaveServiceImpl implements ILeaveService {
 	
 	@Transactional
 	@Override
-	public ResponseEntity<?> leaveApproveOrRejectAction(String action, LeaveRequestActionPayload leaveReq) throws Exception{
+	public ResponseEntity<?> leaveApproveOrRejectAction(String action, String leaveId) throws Exception{
 		String loggedInUSerEmail = Helper.loggedInUserEmailId();
 		boolean hasAccess = false;
 		LeaveRequestRecord leaveRequest = null;
-		Optional<LeaveRequestRecord> lrr = leaveRequestRecordRepo.findById(leaveReq.getLeaveId());
+		Optional<LeaveRequestRecord> lrr = leaveRequestRecordRepo.findById(Integer.parseInt(leaveId));
 		if(lrr.isPresent()) {
 			leaveRequest = lrr.get();
 		}
 		
 		try {
-			Long employeeId = leaveReq.getEmployeeId();
-			if(leaveRequest.getEmployee().getId() != employeeId) {
-				return new ResponseEntity<Message>(new Message("The leave request is not belongs to this requested employee. Id mis-match"), HttpStatus.FORBIDDEN);
-			}
+			Long employeeId = leaveRequest.getEmployee().getId();
+
 			hasAccess = employeeService.isLoggedInUserHasAccessToThisEmployee(employeeId, false);
 			if(!hasAccess) {
 				return new ResponseEntity<Message>(new Message("You don't have permission to take action on this leave request."), HttpStatus.FORBIDDEN);
