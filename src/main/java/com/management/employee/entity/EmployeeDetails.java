@@ -68,7 +68,6 @@ public class EmployeeDetails extends Auditable<String> implements Serializable{
 	@Column(name = "zip", length = 10)
 	private String zip;
 	
-	@Enumerated(EnumType.STRING)
 	@Column(name = "gender", length = 10)
 	private Gender gender;
 	

@@ -21,6 +21,8 @@ import com.management.employee.enums.LeaveStatus;
 import com.management.employee.enums.LeaveType;
 import com.management.employee.enums.Roles;
 import com.management.employee.payload.LeaveDetailsRequest;
+import com.management.employee.payload.LeaveRequestActionPayload;
+import com.management.employee.payload.LeaveRequestRecordPayload;
 import com.management.employee.payload.Message;
 import com.management.employee.repository.LeaveCountDetailsRepository;
 import com.management.employee.repository.LeaveRequestRecordRepository;
@@ -164,7 +166,7 @@ public class LeaveServiceImpl implements ILeaveService {
 	
 	@Transactional
 	@Override
-	public ResponseEntity<?> requestForLeave(LeaveRequestRecord leaveReq) throws Exception{
+	public ResponseEntity<?> requestForLeave(LeaveRequestRecordPayload leaveReq) throws Exception{
 		LeaveRequestRecord leaveRecord = null;
 		int totalLeaveDays = 0;
 		Optional<Employee> emp = Optional.empty();
@@ -188,7 +190,7 @@ public class LeaveServiceImpl implements ILeaveService {
 								leaveReq.getToDate(),
 								leaveReq.getLeaveReason(),
 								totalLeaveDays,
-								LeaveStatus.REQUESTED.name(),
+								LeaveStatus.REQUESTED,
 								leaveReq.getLeaveType(),
 								new Date(), null, null);
 						
@@ -213,7 +215,7 @@ public class LeaveServiceImpl implements ILeaveService {
 			throw new IllegalArgumentException("ERROR : On save leave record for object : " + leaveRecord.toString());
 		}catch(Exception ex) {
 			logger.debug("ERROR : On save leave record for object : " + leaveRecord.toString());
-			logger.debug("ERROR : Error message is : " + ex.getMessage());
+			logger.debug("ERROR : Error message is : " + ex);
 			throw new Exception("On save leave record for object : " + leaveRecord.toString());
 		}
 		
@@ -221,9 +223,11 @@ public class LeaveServiceImpl implements ILeaveService {
 	}
 	
 	
+	
+	/*Only logged in user can update their own leave request*/
 	@Transactional
 	@Override
-	public ResponseEntity<?> updateLeaveRequestRecord(LeaveRequestRecord leaveRequest) throws Exception{
+	public ResponseEntity<?> updateLeaveRequestRecord(LeaveRequestRecordPayload leaveRequest) throws Exception{
 		LeaveRequestRecord leaveRecord = null;
 		int totalLeaveDays = 0;
 		Optional<Employee> emp = Optional.empty();
@@ -233,8 +237,8 @@ public class LeaveServiceImpl implements ILeaveService {
 			
 			Optional<LeaveRequestRecord> levRd = leaveRequestRecordRepo.findByIdAndEmployeeId(leaveRequest.getId(), emp.get().getId());
 			if(levRd.isPresent()) {
-				if(!levRd.get().getLeaveStatus().equals(LeaveStatus.ACCEPTED.name()) ||
-						!levRd.get().getLeaveStatus().equals(LeaveStatus.REJECTED.name())) {
+				if(!levRd.get().getLeaveStatus().name().equals(LeaveStatus.ACCEPTED.name()) &&
+						!levRd.get().getLeaveStatus().name().equals(LeaveStatus.REJECTED.name())) {
 					
 					if(leaveRequest.getFromDate().before(leaveRequest.getToDate())) {
 						totalLeaveDays = Helper.getTotalLeavesByCalculatingFromDateToDate(
@@ -413,28 +417,28 @@ public class LeaveServiceImpl implements ILeaveService {
 		try {
 			if(leaveType != null && leaveStatus == null) {
 				if(empIds != null) {
-					leaveRecords = leaveRequestRecordRepo.findByLeaveTypeAndEmployeeIdIn(leaveType, empIds);
+					leaveRecords = leaveRequestRecordRepo.findByLeaveTypeAndEmployeeIdIn(LeaveType.get(leaveType), empIds);
 				}
 				else {
-					leaveRecords = leaveRequestRecordRepo.findByLeaveType(leaveType);
+					leaveRecords = leaveRequestRecordRepo.findByLeaveType(LeaveType.get(leaveType));
 				}
 				
 			}
 			else if (leaveType == null && leaveStatus != null) {
 				if(empIds != null) {
-					leaveRecords = leaveRequestRecordRepo.findByLeaveStatusAndEmployeeIdIn(leaveStatus, empIds);
+					leaveRecords = leaveRequestRecordRepo.findByLeaveStatusAndEmployeeIdIn(LeaveStatus.get(leaveStatus), empIds);
 				}
 				else {
-					leaveRecords = leaveRequestRecordRepo.findByLeaveStatus(leaveStatus);
+					leaveRecords = leaveRequestRecordRepo.findByLeaveStatus(LeaveStatus.get(leaveStatus));
 				}
 				
 			}
 			else if(leaveType != null && leaveStatus != null) {
 				if(empIds != null) {
-					leaveRecords = leaveRequestRecordRepo.findByLeaveTypeAndLeaveStatusAndEmployeeIdIn(leaveType, leaveStatus, empIds);
+					leaveRecords = leaveRequestRecordRepo.findByLeaveTypeAndLeaveStatusAndEmployeeIdIn(LeaveType.get(leaveType), LeaveStatus.get(leaveStatus), empIds);
 				}
 				else {
-					leaveRecords = leaveRequestRecordRepo.findByLeaveTypeAndLeaveStatus(leaveType, leaveStatus);
+					leaveRecords = leaveRequestRecordRepo.findByLeaveTypeAndLeaveStatus(LeaveType.get(leaveType), LeaveStatus.get(leaveStatus));
 				}
 				
 			}
@@ -478,40 +482,47 @@ public class LeaveServiceImpl implements ILeaveService {
 	
 	@Transactional
 	@Override
-	public ResponseEntity<?> leaveApproveOrRejectAction(String action, LeaveRequestRecord leaveReq) throws Exception{
+	public ResponseEntity<?> leaveApproveOrRejectAction(String action, LeaveRequestActionPayload leaveReq) throws Exception{
 		String loggedInUSerEmail = Helper.loggedInUserEmailId();
 		boolean hasAccess = false;
+		LeaveRequestRecord leaveRequest = null;
+		Optional<LeaveRequestRecord> lrr = leaveRequestRecordRepo.findById(leaveReq.getLeaveId());
+		if(lrr.isPresent()) {
+			leaveRequest = lrr.get();
+		}
 		
 		try {
-			Long employeeId = leaveReq.getEmployee().getId();
+			Long employeeId = leaveReq.getEmployeeId();
+			if(leaveRequest.getEmployee().getId() != employeeId) {
+				return new ResponseEntity<Message>(new Message("The leave request is not belongs to this requested employee. Id mis-match"), HttpStatus.FORBIDDEN);
+			}
 			hasAccess = employeeService.isLoggedInUserHasAccessToThisEmployee(employeeId, false);
 			if(!hasAccess) {
 				return new ResponseEntity<Message>(new Message("You don't have permission to take action on this leave request."), HttpStatus.FORBIDDEN);
 			}
 			
-			if(leaveReq.getLeaveStatus().equals(LeaveStatus.REQUESTED.name())) {
-				if(action.equals(LeaveStatus.REJECTED.name())) {
-					leaveReq.setLeaveStatus(LeaveStatus.REJECTED.name());
-					leaveReq.setResponseDate(new Date());
-					leaveReq.setActionTakenBy(loggedInUSerEmail);
+			if(leaveRequest.getLeaveStatus().name().equals(LeaveStatus.REQUESTED.name())) {
+				if(action.equals(LeaveStatus.REJECTED.value)) {
+					leaveRequest.setLeaveStatus(LeaveStatus.REJECTED);
+					leaveRequest.setResponseDate(new Date());
+					leaveRequest.setActionTakenBy(loggedInUSerEmail);
 					
-					leaveRequestRecordRepo.save(leaveReq);
+					leaveRequestRecordRepo.save(leaveRequest);
 				}
-				
-				if(leaveReq.getLeaveStatus().equals(LeaveStatus.ACCEPTED.name())) {
-					leaveReq.setLeaveStatus(LeaveStatus.ACCEPTED.name());
-					leaveReq.setResponseDate(new Date());
-					leaveReq.setActionTakenBy(loggedInUSerEmail);
+				else if(action.equals(LeaveStatus.ACCEPTED.value)) {
+					leaveRequest.setLeaveStatus(LeaveStatus.ACCEPTED);
+					leaveRequest.setResponseDate(new Date());
+					leaveRequest.setActionTakenBy(loggedInUSerEmail);
 					
-					leaveRequestRecordRepo.saveAndFlush(leaveReq);
+					leaveRequestRecordRepo.saveAndFlush(leaveRequest);
 					
 					LeaveCountDetails leaveCountDetails = null;
 					Optional<LeaveCountDetails> optLeaveCntDtl = leaveCountDetailsRepo.findByEmployeeId(employeeId);
 					if(optLeaveCntDtl.isPresent()) {
 						leaveCountDetails = optLeaveCntDtl.get();
-						Integer totalRequestedLeaves = leaveReq.getTotalLeaveDays();
+						Integer totalRequestedLeaves = leaveRequest.getTotalLeaveDays();
 						
-						if(leaveReq.getLeaveType().equals(LeaveType.CASUAL_LEAVE.name())) {
+						if(leaveRequest.getLeaveType().equals(LeaveType.CASUAL_LEAVE.name())) {
 							Double remainingCasualLeaves = leaveCountDetails.getRemainingCasualLeave();
 							
 							if(totalRequestedLeaves <= remainingCasualLeaves) {
@@ -526,7 +537,7 @@ public class LeaveServiceImpl implements ILeaveService {
 							leaveCountDetails.setRemainingLeaves(Double.parseDouble(totalRequestedLeaves.toString()));
 						}
 						
-						else if(leaveReq.getLeaveType().equals(LeaveType.SICK_LEAVE.name())) {
+						else if(leaveRequest.getLeaveType().equals(LeaveType.SICK_LEAVE.name())) {
 							Double remainingSickLeaves = leaveCountDetails.getRemainingSickLeave();
 							
 							if(totalRequestedLeaves <= remainingSickLeaves) {
@@ -558,9 +569,12 @@ public class LeaveServiceImpl implements ILeaveService {
 					
 					leaveCountDetailsRepo.save(leaveCountDetails);
 				}
+				else {
+					return new ResponseEntity<Message>(new Message("No proper action found to take action on this leave request"), HttpStatus.BAD_REQUEST);
+				}
 			}
 			else {
-				return new ResponseEntity<Message>(new Message("This leave request is already " + leaveReq.getLeaveStatus()), HttpStatus.BAD_REQUEST);
+				return new ResponseEntity<Message>(new Message("This leave request is already " + leaveRequest.getLeaveStatus()), HttpStatus.BAD_REQUEST);
 			}
 			
 		}catch(Exception ex) {

@@ -9,9 +9,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.management.employee.entity.LeaveRequestRecord;
 import com.management.employee.entity.LeaveSettings;
 import com.management.employee.payload.LeaveDetailsRequest;
+import com.management.employee.payload.LeaveRequestActionPayload;
+import com.management.employee.payload.LeaveRequestRecordPayload;
 import com.management.employee.service.ILeaveService;
 
 
@@ -55,7 +56,7 @@ public class LeaveController {
 	
 	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER') || hasRole('USER')")
 	@RequestMapping(value = "/apply", method = RequestMethod.POST)
-	public ResponseEntity<?> requestForLeave(@RequestBody LeaveRequestRecord leaveRequest) throws Exception{
+	public ResponseEntity<?> requestForLeave(@RequestBody LeaveRequestRecordPayload leaveRequest) throws Exception{
 
 		return leaveService.requestForLeave(leaveRequest);
 	}
@@ -71,7 +72,7 @@ public class LeaveController {
 	
 	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER') || hasRole('USER')")
 	@RequestMapping(value = "/edit", method = RequestMethod.PUT)
-	public ResponseEntity<?> updateLeaveRequest(@RequestBody LeaveRequestRecord leaveRequest) throws Exception{
+	public ResponseEntity<?> updateLeaveRequest(@RequestBody LeaveRequestRecordPayload leaveRequest) throws Exception{
 
 		return leaveService.updateLeaveRequestRecord(leaveRequest);
 	}
@@ -79,9 +80,9 @@ public class LeaveController {
 	
 	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER')")
 	@RequestMapping(value = "/", method = RequestMethod.PUT)
-	public ResponseEntity<?> updateLeaveRequest(
+	public ResponseEntity<?> actionOnLeaveRequest(
 			@RequestParam(value = "action", required = true) String acction,
-			@RequestBody LeaveRequestRecord leaveRequest) throws Exception{
+			@RequestBody LeaveRequestActionPayload leaveRequest) throws Exception{
 
 		return leaveService.leaveApproveOrRejectAction(acction, leaveRequest);
 	}

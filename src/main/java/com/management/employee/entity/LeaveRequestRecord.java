@@ -57,11 +57,9 @@ public class LeaveRequestRecord extends Auditable<String> implements Serializabl
 	@Column(name = "leave_reason", length = 500)
 	private String leaveReason;
 	
-	@Enumerated(EnumType.STRING)
 	@Column(name = "leave_status", nullable = false)
 	private LeaveStatus leaveStatus;
 	
-	@Enumerated(EnumType.STRING)
 	@Column(name = "leave_type", nullable = false)
 	private LeaveType leaveType;
 	
@@ -82,14 +80,6 @@ public class LeaveRequestRecord extends Auditable<String> implements Serializabl
 		super();
 	}
 
-	public LeaveRequestRecord(Date fromDate, Date toDate, String leaveReason, LeaveStatus leaveStatus) {
-		super();
-		this.fromDate = fromDate;
-		this.toDate = toDate;
-		this.leaveReason = leaveReason;
-		this.leaveStatus = leaveStatus;
-	}
-	
 	public LeaveRequestRecord(Employee employee, Date fromDate, Date toDate, String leaveReason,
 			Integer totalLeaveDays, LeaveStatus leaveStatus, LeaveType leaveType, Date requestDate, 
 			Date responseDate, String actionTakenBy) {
