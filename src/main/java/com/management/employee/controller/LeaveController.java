@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.management.employee.entity.LeaveSettings;
 import com.management.employee.payload.LeaveDetailsRequest;
-import com.management.employee.payload.LeaveRequestActionPayload;
 import com.management.employee.payload.LeaveRequestRecordPayload;
 import com.management.employee.service.ILeaveService;
 
@@ -31,7 +30,7 @@ public class LeaveController {
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public ResponseEntity<?> getAllMyLeaveRequestRecord(
 			@RequestParam(value = "leaveType", required = false) String leaveType,
-			@RequestParam(value = "leaveStaus", required = false) String leaveStatus) throws Exception{
+			@RequestParam(value = "leaveStatus", required = false) String leaveStatus) throws Exception{
 
 		return leaveService.getAllMyLeaves(leaveType, leaveStatus);
 	}
@@ -48,7 +47,7 @@ public class LeaveController {
 	@RequestMapping(value = "/list", method = RequestMethod.GET)
 	public ResponseEntity<?> getAllLeaveRequestRecord(
 			@RequestParam(value = "leaveType", required = false) String leaveType,
-			@RequestParam(value = "leaveStaus", required = false) String leaveStatus) throws Exception{
+			@RequestParam(value = "leaveStatus", required = false) String leaveStatus) throws Exception{
 
 		return leaveService.getAllRequetedLeaves(leaveType, leaveStatus);
 	}
@@ -67,6 +66,13 @@ public class LeaveController {
 	public ResponseEntity<?> updateLeaveCountDetailsByEmployeeId(@RequestBody LeaveDetailsRequest leaveDetailsReq) throws Exception{
 
 		return leaveService.updateLeaveCountDetailsForEmployee(leaveDetailsReq);
+	}
+	
+	@PreAuthorize("hasRole('ADMIN') || hasRole('HR') || hasRole('MANAGER') || hasRole('USER')")
+	@RequestMapping(value = "/details/{empId}", method = RequestMethod.GET)
+	public ResponseEntity<?> getLeaveCountDetails(@PathVariable("empId") String id) throws Exception{
+
+		return leaveService.getLeaveCountDetailsByEmployeeID(id);
 	}
 	
 	
@@ -96,28 +102,4 @@ public class LeaveController {
 	}
 	
 	
-	
-//	@PreAuthorize("hasRole('HR') or hasRole('ADMIN')")
-//	@RequestMapping(value = "/save", method = RequestMethod.POST)
-//	public ResponseEntity<?> saveNewEmployeeStatus(@RequestBody EmployeeStatus empStatus) throws Exception {
-//		
-//		return empStatusService.addNewEmployeeStauts(empStatus);
-//	}
-//	
-//	
-//	@PreAuthorize("hasRole('HR') or hasRole('ADMIN')")
-//	@RequestMapping(value = "/update", method = RequestMethod.PUT)
-//	public ResponseEntity<?> updateEmployeeStatus(@RequestBody EmployeeStatus empStatus) throws Exception {
-//		
-//		return empStatusService.updateEmployeeStatus(empStatus);
-//	}
-//	
-//	
-//	@PreAuthorize("hasRole('HR') or hasRole('ADMIN')")
-//	@RequestMapping(value = "/delete/{id}", method = RequestMethod.DELETE)
-//	public ResponseEntity<?> deleteEmployeeStatusById(@PathVariable("id") String id) throws Exception{
-//
-//		return empStatusService.deleteEmployeeStatusById(id);
-//	}
-//	
 }

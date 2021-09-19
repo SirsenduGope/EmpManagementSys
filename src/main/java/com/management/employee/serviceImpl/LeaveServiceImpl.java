@@ -125,20 +125,34 @@ public class LeaveServiceImpl implements ILeaveService {
 	@Override
 	public ResponseEntity<?> updateLeaveCountDetailsForEmployee(LeaveDetailsRequest leaveDetailsReq) throws Exception{
 		LeaveCountDetails leaveCountDetails = null;
+		String authority = Helper.loggedInUserAuthority();
+		String loggedInUserEmail = Helper.loggedInUserEmailId();
 		try {
+			
+			if(authority.equals(Roles.ROLE_HR.name())) {
+				Employee requestedEmp = (Employee) employeeService.getEmployeeById(leaveDetailsReq.getEmployeeId()).getBody();
+				if(requestedEmp.getEmail().equals(loggedInUserEmail) ||
+						requestedEmp.getRoles().iterator().next().getRole().name().equals(Roles.ROLE_ADMIN.name())) {
+					return new ResponseEntity<Message>(new Message("You don't have permission for this operatiob"), HttpStatus.FORBIDDEN);
+				}
+			}
+			
 			if(leaveDetailsReq.getEmployeeId() != null) {
 				Optional<LeaveCountDetails> leaveDtl = leaveCountDetailsRepo.findByEmployeeId(Long.parseLong(leaveDetailsReq.getEmployeeId()));
 				if(leaveDtl.isPresent()) {
 					leaveCountDetails = leaveDtl.get();
-					leaveCountDetails.setNoOfCasualLeave(leaveDetailsReq.getLeaveDetails().getNoOfCasualLeave());
-					leaveCountDetails.setNoOfSickLeave(leaveDetailsReq.getLeaveDetails().getNoOfSickLeave());
-					leaveCountDetails.setNoOfEarnLeave(leaveDetailsReq.getLeaveDetails().getNoOfEarnLeave());
+					leaveCountDetails.setNoOfCasualLeave(leaveDetailsReq.getNoOfCasualLeave());
+					leaveCountDetails.setNoOfSickLeave(leaveDetailsReq.getNoOfSickLeave());
+					leaveCountDetails.setNoOfEarnLeave(leaveDetailsReq.getNoOfEarnLeave());
 					
-					leaveCountDetails.setRemainingCasualLeave(leaveDetailsReq.getLeaveDetails().getRemainingCasualLeave());
-					leaveCountDetails.setRemainingSickLeave(leaveDetailsReq.getLeaveDetails().getRemainingSickLeave());
-					leaveCountDetails.setRemainingEarnLeave(leaveDetailsReq.getLeaveDetails().getRemainingEarnLeave());
+					leaveCountDetails.setRemainingCasualLeave(leaveDetailsReq.getRemainingCasualLeave());
+					leaveCountDetails.setRemainingSickLeave(leaveDetailsReq.getRemainingSickLeave());
+					leaveCountDetails.setRemainingEarnLeave(leaveDetailsReq.getRemainingEarnLeave());
 					
-					leaveCountDetails.setTotalLOP(leaveDetailsReq.getLeaveDetails().getTotalLOP());
+					leaveCountDetails.setTotalLeaves(leaveDetailsReq.getTotalLeaves());
+					leaveCountDetails.setRemainingLeaves(leaveDetailsReq.getRemainingLeaves());
+					
+					leaveCountDetails.setTotalLOP(leaveDetailsReq.getTotalLOP());
 					
 					leaveCountDetailsRepo.save(leaveCountDetails);
 				}
@@ -160,6 +174,34 @@ public class LeaveServiceImpl implements ILeaveService {
 		}
 		
 		return new ResponseEntity<Message>(new Message("Leave details update successfully for emaployee id : " + leaveDetailsReq.getEmployeeId()), HttpStatus.OK);
+	}
+	
+	
+	@Override
+	public ResponseEntity<?> getLeaveCountDetailsByEmployeeID(String id) throws Exception{
+		Optional<LeaveCountDetails> leaveCountDetails = Optional.empty();
+		boolean hasAccess = false;
+		try {
+			hasAccess = employeeService.isLoggedInUserHasAccessToThisEmployee(Long.parseLong(id), true);
+			if(!hasAccess) {
+				return new ResponseEntity<Message>(new Message("You don't have permission to view this user's leave count details."), HttpStatus.FORBIDDEN);
+			}
+			if(id != null) {
+				leaveCountDetails = leaveCountDetailsRepo.findByEmployeeId(Long.parseLong(id));
+				if(!leaveCountDetails.isPresent()) {
+					return new ResponseEntity<Message>(new Message("No leave count found for this employee."),HttpStatus.NOT_FOUND);
+				}
+			}
+			else {
+				return new ResponseEntity<Message>(new Message("Employee Id not found"),HttpStatus.NOT_FOUND);
+			}
+		}catch(Exception ex) {
+			logger.debug("ERROR : On fetch leave count details for employee : " + id);
+			logger.debug("ERROR : Error message is : " + ex);
+			throw new Exception("ERROR : On fetch leave count details for employee : " + id, ex);
+		}
+		
+		return new ResponseEntity<LeaveCountDetails>(leaveCountDetails.get(), HttpStatus.OK);
 	}
 
 	
@@ -519,7 +561,7 @@ public class LeaveServiceImpl implements ILeaveService {
 						leaveCountDetails = optLeaveCntDtl.get();
 						Integer totalRequestedLeaves = leaveRequest.getTotalLeaveDays();
 						
-						if(leaveRequest.getLeaveType().equals(LeaveType.CASUAL_LEAVE.name())) {
+						if(leaveRequest.getLeaveType().name().equals(LeaveType.CASUAL_LEAVE.name())) {
 							Double remainingCasualLeaves = leaveCountDetails.getRemainingCasualLeave();
 							
 							if(totalRequestedLeaves <= remainingCasualLeaves) {
@@ -531,10 +573,9 @@ public class LeaveServiceImpl implements ILeaveService {
 								leaveCountDetails.setRemainingCasualLeave(0d);
 								leaveCountDetails.setTotalLOP(totalLop);
 							}
-							leaveCountDetails.setRemainingLeaves(Double.parseDouble(totalRequestedLeaves.toString()));
 						}
 						
-						else if(leaveRequest.getLeaveType().equals(LeaveType.SICK_LEAVE.name())) {
+						else if(leaveRequest.getLeaveType().name().equals(LeaveType.SICK_LEAVE.name())) {
 							Double remainingSickLeaves = leaveCountDetails.getRemainingSickLeave();
 							
 							if(totalRequestedLeaves <= remainingSickLeaves) {
@@ -546,7 +587,6 @@ public class LeaveServiceImpl implements ILeaveService {
 								leaveCountDetails.setRemainingSickLeave(0d);
 								leaveCountDetails.setTotalLOP(totalLop);
 							}
-							leaveCountDetails.setRemainingLeaves(Double.parseDouble(totalRequestedLeaves.toString()));
 						}
 						else {
 							Double remainingEarnLeaves = leaveCountDetails.getRemainingEarnLeave();
@@ -560,8 +600,11 @@ public class LeaveServiceImpl implements ILeaveService {
 								leaveCountDetails.setRemainingEarnLeave(0d);
 								leaveCountDetails.setTotalLOP(totalLop);
 							}
-							leaveCountDetails.setRemainingLeaves(Double.parseDouble(totalRequestedLeaves.toString()));
 						}
+						
+						leaveCountDetails.setRemainingLeaves(leaveCountDetails.getRemainingCasualLeave() +
+								leaveCountDetails.getRemainingSickLeave() +
+								leaveCountDetails.getRemainingEarnLeave());
 					}
 					
 					leaveCountDetailsRepo.save(leaveCountDetails);

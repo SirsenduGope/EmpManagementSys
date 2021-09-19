@@ -20,8 +20,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "leave_details")
-@SQLDelete(sql = "UPDATE leave_details SET deleted = true WHERE id=?")
+@Table(name = "leave_count_details")
+@SQLDelete(sql = "UPDATE leave_count_details SET deleted = true WHERE id=?")
 @Where(clause = "deleted = false")
 public class LeaveCountDetails extends Auditable<String> implements Serializable {
 	

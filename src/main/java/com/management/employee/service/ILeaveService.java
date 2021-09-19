@@ -27,4 +27,6 @@ public interface ILeaveService {
 
 	public ResponseEntity<?> leaveApproveOrRejectAction(String action, String leaveId) throws Exception;
 
+	public ResponseEntity<?> getLeaveCountDetailsByEmployeeID(String id) throws Exception;
+
 }
