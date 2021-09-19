@@ -257,7 +257,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 		boolean hasAccess = false;
 		
 		if(employeeDetailsReq != null && employeeDetailsReq.getId() != null 
-				&& employeeDetailsReq.getEmployeeDetails().getFirstName() != null) {
+				&& employeeDetailsReq.getFirstName() != null) {
 			try {
 				
 				hasAccess = isLoggedInUserHasAccessToThisEmployee(Long.parseLong(employeeDetailsReq.getId()), true);
@@ -271,22 +271,22 @@ public class EmployeeServiceImpl implements IEmployeeService{
 					
 					try {
 						EmployeeDetails updatedEmpDetails = employee.getEmployeeDetails();
-						updatedEmpDetails.setFirstName(employeeDetailsReq.getEmployeeDetails().getFirstName());
-						updatedEmpDetails.setMiddleName(employeeDetailsReq.getEmployeeDetails().getMiddleName());
-						updatedEmpDetails.setLastName(employeeDetailsReq.getEmployeeDetails().getLastName());
-						updatedEmpDetails.setPhone(employeeDetailsReq.getEmployeeDetails().getPhone());
-						updatedEmpDetails.setMobile(employeeDetailsReq.getEmployeeDetails().getMobile());
-						updatedEmpDetails.setAddress(employeeDetailsReq.getEmployeeDetails().getAddress());
-						updatedEmpDetails.setState(employeeDetailsReq.getEmployeeDetails().getState());
-						updatedEmpDetails.setCity(employeeDetailsReq.getEmployeeDetails().getCity());
-						updatedEmpDetails.setZip(employeeDetailsReq.getEmployeeDetails().getZip());
-						updatedEmpDetails.setDateOfBirth(employeeDetailsReq.getEmployeeDetails().getDateOfBirth());
-						updatedEmpDetails.setDateOfJoining(employeeDetailsReq.getEmployeeDetails().getDateOfJoining());
+						updatedEmpDetails.setFirstName(employeeDetailsReq.getFirstName());
+						updatedEmpDetails.setMiddleName(employeeDetailsReq.getMiddleName());
+						updatedEmpDetails.setLastName(employeeDetailsReq.getLastName());
+						updatedEmpDetails.setPhone(employeeDetailsReq.getPhone());
+						updatedEmpDetails.setMobile(employeeDetailsReq.getMobile());
+						updatedEmpDetails.setAddress(employeeDetailsReq.getAddress());
+						updatedEmpDetails.setState(employeeDetailsReq.getState());
+						updatedEmpDetails.setCity(employeeDetailsReq.getCity());
+						updatedEmpDetails.setZip(employeeDetailsReq.getZip());
+						updatedEmpDetails.setDateOfBirth(employeeDetailsReq.getDateOfBirth());
+						updatedEmpDetails.setDateOfJoining(employeeDetailsReq.getDateOfJoining());
 						
-						if(employeeDetailsReq.getEmployeeDetails().getGender().toString().equals(Gender.MALE.name())) {
+						if(employeeDetailsReq.getGender().toString().equals(Gender.MALE.name())) {
 							updatedEmpDetails.setGender(Gender.MALE);
 						}
-						else if(employeeDetailsReq.getEmployeeDetails().getGender().toString().equals(Gender.FEMALE.name())) {
+						else if(employeeDetailsReq.getGender().toString().equals(Gender.FEMALE.name())) {
 							updatedEmpDetails.setGender(Gender.FEMALE);
 						}
 						else {
@@ -349,7 +349,7 @@ public class EmployeeServiceImpl implements IEmployeeService{
 			if(employeeDetailsReq.getId() == null) {
 				throw new NotFoundException("Employee Id is not found");
 			}
-			if(employeeDetailsReq.getEmployeeDetails().getFirstName() == null) {
+			if(employeeDetailsReq.getFirstName() == null) {
 				throw new NotFoundException("First name is not found");
 			}
 		}
